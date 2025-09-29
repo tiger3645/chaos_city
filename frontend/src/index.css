@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    /* background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); */
+    min-height: 100vh;
+}
+
+.card-shadow {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.faction-police {
+    @apply border-blue-500 bg-gradient-to-br from-blue-900/20 to-blue-800/20;
+}
+
+.faction-mafia {
+    @apply border-red-500 bg-gradient-to-br from-red-900/20 to-red-800/20;
+}
+
+.faction-detective {
+    @apply border-green-500 bg-gradient-to-br from-green-900/20 to-green-800/20;
+}
+
+.faction-thief {
+    @apply border-purple-500 bg-gradient-to-br from-purple-900/20 to-purple-800/20;
+}
+
+.faction-wildcard {
+    @apply border-yellow-500 bg-gradient-to-br from-yellow-900/20 to-yellow-800/20;
+}

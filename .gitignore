@@ -1,0 +1,135 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+*/venv/
+*/env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+*/dist/
+*/build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Coverage
+coverage/
+*.lcov
+
+# Temporary folders
+tmp/
+temp/
+
+# Game data (if saving game states to files)
+game_saves/
+*.save
+
+# Backup files
+*.backup
+*.bak
+ 
+# Editors and IDEs
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Python caches and tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+pip-wheel-metadata/
+__pypackages__/
+
+# Byte-compiled / optimized / DLL files
+*.pyc
+*.pyo
+*.pyd
+
+# Local database files
+*.sqlite3
+*.db
+
+# Secrets and credentials
+.env.local
+.env.*.local
+secrets.yml
+
+# Vite / frontend caches and temp
+.vite/
+.parcel-cache/
+.turbo/
+.cache/
+
+# Misc
+.DS_Store
+.vagrant/
+.serverless/
+.firebase/
+
+# npm / yarn lockfiles are usually committed; uncomment to ignore if desired
+package-lock.json
+# yarn.lock
