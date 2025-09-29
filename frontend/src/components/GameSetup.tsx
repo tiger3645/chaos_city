@@ -3,8 +3,8 @@ import { Faction } from '../types/game';
 import { Gamepad2, Users, Sword, Eye, Zap, Star } from 'lucide-react';
 
 interface GameSetupProps {
-    onCreateGame: (player1Name: string, player1Faction: Faction, player2Name: string, player2Faction: Faction) => void;
-    onJoinGame: (gameId: string) => void;
+    onCreateGame: (playerName: string, playerFaction: Faction) => void;
+    onJoinGame: (gameId: string, playerName: string, playerFaction: Faction) => void;
     isConnected: boolean;
 }
 
@@ -43,21 +43,21 @@ const factionInfo = {
 
 const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onJoinGame, isConnected }) => {
     const [mode, setMode] = useState<'create' | 'join'>('create');
-    const [player1Name, setPlayer1Name] = useState('Jugador 1');
-    const [player1Faction, setPlayer1Faction] = useState<Faction>(Faction.POLICE);
-    const [player2Name, setPlayer2Name] = useState('Jugador 2');
-    const [player2Faction, setPlayer2Faction] = useState<Faction>(Faction.MAFIA);
+    const [playerName, setPlayerName] = useState('Jugador 1');
+    const [playerFaction, setPlayerFaction] = useState<Faction>(Faction.POLICE);
     const [gameId, setGameId] = useState('');
+    const [joinPlayerName, setJoinPlayerName] = useState('Jugador 2');
+    const [joinPlayerFaction, setJoinPlayerFaction] = useState<Faction>(Faction.MAFIA);
 
     const handleCreateGame = () => {
-        if (player1Name && player2Name) {
-            onCreateGame(player1Name, player1Faction, player2Name, player2Faction);
+        if (playerName.trim()) {
+            onCreateGame(playerName.trim(), playerFaction);
         }
     };
 
     const handleJoinGame = () => {
-        if (gameId) {
-            onJoinGame(gameId);
+        if (gameId.trim() && joinPlayerName.trim()) {
+            onJoinGame(gameId.trim(), joinPlayerName.trim(), joinPlayerFaction);
         }
     };
 
@@ -92,8 +92,8 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onJoinGame, isConne
                         <button
                             onClick={() => setMode('create')}
                             className={`px-6 py-2 rounded font-bold transition-colors ${mode === 'create'
-                                    ? 'bg-chaos-gold text-black'
-                                    : 'text-white hover:bg-white/10'
+                                ? 'bg-chaos-gold text-black'
+                                : 'text-white hover:bg-white/10'
                                 }`}
                         >
                             Crear Juego
@@ -101,8 +101,8 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onJoinGame, isConne
                         <button
                             onClick={() => setMode('join')}
                             className={`px-6 py-2 rounded font-bold transition-colors ${mode === 'join'
-                                    ? 'bg-chaos-gold text-black'
-                                    : 'text-white hover:bg-white/10'
+                                ? 'bg-chaos-gold text-black'
+                                : 'text-white hover:bg-white/10'
                                 }`}
                         >
                             Unirse a Juego
@@ -117,24 +117,25 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onJoinGame, isConne
                             Crear Nuevo Juego
                         </h2>
 
-                        {/* Player 1 Setup */}
+                        {/* Player Setup */}
                         <div className="mb-6">
-                            <h3 className="text-lg font-bold text-white mb-4">Jugador 1</h3>
+                            <h3 className="text-lg font-bold text-white mb-4">Tu Jugador</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-white mb-2">Nombre:</label>
                                     <input
                                         type="text"
-                                        value={player1Name}
-                                        onChange={(e) => setPlayer1Name(e.target.value)}
+                                        value={playerName}
+                                        onChange={(e) => setPlayerName(e.target.value)}
                                         className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
+                                        placeholder="Ingresa tu nombre"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-white mb-2">Facción:</label>
                                     <select
-                                        value={player1Faction}
-                                        onChange={(e) => setPlayer1Faction(e.target.value as Faction)}
+                                        value={playerFaction}
+                                        onChange={(e) => setPlayerFaction(e.target.value as Faction)}
                                         className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
                                     >
                                         {Object.entries(factionInfo).map(([faction, info]) => (
@@ -147,39 +148,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onJoinGame, isConne
                             </div>
                         </div>
 
-                        {/* Player 2 Setup */}
-                        <div className="mb-6">
-                            <h3 className="text-lg font-bold text-white mb-4">Jugador 2</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-white mb-2">Nombre:</label>
-                                    <input
-                                        type="text"
-                                        value={player2Name}
-                                        onChange={(e) => setPlayer2Name(e.target.value)}
-                                        className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-white mb-2">Facción:</label>
-                                    <select
-                                        value={player2Faction}
-                                        onChange={(e) => setPlayer2Faction(e.target.value as Faction)}
-                                        className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
-                                    >
-                                        {Object.entries(factionInfo).map(([faction, info]) => (
-                                            <option key={faction} value={faction}>
-                                                {info.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
+                        <div className="mb-4 p-4 bg-blue-900/30 rounded border-l-4 border-blue-400">
+                            <p className="text-blue-200 text-sm">
+                                <strong>Nota:</strong> Después de crear el juego, comparte el ID con otro jugador para que se una a la partida.
+                            </p>
                         </div>
 
                         <button
                             onClick={handleCreateGame}
-                            disabled={!player1Name || !player2Name}
+                            disabled={!playerName.trim()}
                             className="w-full py-3 bg-chaos-gold text-black font-bold rounded hover:bg-opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Crear Juego
@@ -203,9 +180,40 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onJoinGame, isConne
                             />
                         </div>
 
+                        {/* Join Player Setup */}
+                        <div className="mb-6">
+                            <h3 className="text-lg font-bold text-white mb-4">Tu Jugador</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-white mb-2">Nombre:</label>
+                                    <input
+                                        type="text"
+                                        value={joinPlayerName}
+                                        onChange={(e) => setJoinPlayerName(e.target.value)}
+                                        className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
+                                        placeholder="Ingresa tu nombre"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-white mb-2">Facción:</label>
+                                    <select
+                                        value={joinPlayerFaction}
+                                        onChange={(e) => setJoinPlayerFaction(e.target.value as Faction)}
+                                        className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
+                                    >
+                                        {Object.entries(factionInfo).map(([faction, info]) => (
+                                            <option key={faction} value={faction}>
+                                                {info.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
                         <button
                             onClick={handleJoinGame}
-                            disabled={!gameId}
+                            disabled={!gameId.trim() || !joinPlayerName.trim()}
                             className="w-full py-3 bg-chaos-blue text-white font-bold rounded hover:bg-opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Unirse al Juego

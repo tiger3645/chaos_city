@@ -143,25 +143,20 @@ export const useWebSocket = (url: string) => {
     }, []);
 
     // Game-specific methods
-    const createGame = useCallback((
-        player1Name: string,
-        player1Faction: Faction,
-        player2Name: string,
-        player2Faction: Faction
-    ) => {
+    const createGame = useCallback((playerName: string, playerFaction: Faction) => {
         sendMessage({
             type: 'create_game',
-            player1_name: player1Name,
-            player1_faction: player1Faction,
-            player2_name: player2Name,
-            player2_faction: player2Faction
+            player_name: playerName,
+            player_faction: playerFaction
         });
     }, [sendMessage]);
 
-    const joinGame = useCallback((gameId: string) => {
+    const joinGame = useCallback((gameId: string, playerName: string, playerFaction: Faction) => {
         sendMessage({
             type: 'join_game',
-            game_id: gameId
+            game_id: gameId,
+            player_name: playerName,
+            player_faction: playerFaction
         });
     }, [sendMessage]);
 

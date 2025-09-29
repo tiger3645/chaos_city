@@ -7,26 +7,43 @@ class GameEngine:
     def __init__(self):
         self.games: Dict[str, GameState] = {}
     
-    def create_game(self, player1_name: str, player1_faction: Faction, 
-                   player2_name: str, player2_faction: Faction) -> str:
-        """Create a new game between two players"""
+    def create_game(self, player_name: str, player_faction: Faction) -> str:
+        """Create a new game with one player"""
         game_id = str(uuid.uuid4())
         
-        # Create players with starter decks
-        player1 = self._create_player(player1_name, player1_faction)
-        player2 = self._create_player(player2_name, player2_faction)
+        # Create player with starter deck
+        player = self._create_player(player_name, player_faction)
         
-        # Create game state
+        # Create game state with single player
         game = GameState(
             game_id=game_id,
-            players=[player1, player2]
+            players=[player]
         )
         
-        # Deal initial hands
-        self._deal_initial_hands(game)
+        # Don't deal initial hands yet - wait for second player
         
         self.games[game_id] = game
         return game_id
+    
+    def join_game(self, game_id: str, player_name: str, player_faction: Faction) -> bool:
+        """Add a second player to an existing game"""
+        if game_id not in self.games:
+            return False
+        
+        game = self.games[game_id]
+        
+        # Check if game already has 2 players
+        if len(game.players) >= 2:
+            return False
+        
+        # Create and add second player
+        player = self._create_player(player_name, player_faction)
+        game.players.append(player)
+        
+        # Now deal initial hands to both players
+        self._deal_initial_hands(game)
+        
+        return True
     
     def _create_player(self, name: str, faction: Faction) -> Player:
         """Create a player with a starter deck"""

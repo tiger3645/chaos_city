@@ -74,15 +74,10 @@ class GameServer:
     async def handle_create_game(self, websocket: WebSocketServerProtocol, data: dict):
         """Handle game creation"""
         try:
-            player1_name = data.get("player1_name", "Player 1")
-            player1_faction = Faction(data.get("player1_faction", "police"))
-            player2_name = data.get("player2_name", "Player 2") 
-            player2_faction = Faction(data.get("player2_faction", "mafia"))
+            player_name = data.get("player_name", "Player 1")
+            player_faction = Faction(data.get("player_faction", "police"))
             
-            game_id = self.game_engine.create_game(
-                player1_name, player1_faction,
-                player2_name, player2_faction
-            )
+            game_id = self.game_engine.create_game(player_name, player_faction)
             
             # Associate websocket with game
             self.client_games[websocket] = game_id
@@ -93,7 +88,7 @@ class GameServer:
             await self.send_message(websocket, {
                 "type": "game_created",
                 "game_id": game_id,
-                "message": "Game created successfully"
+                "message": "Game created successfully. Waiting for second player to join."
             })
             
             # Send initial game state to all clients in game
@@ -105,9 +100,18 @@ class GameServer:
     async def handle_join_game(self, websocket: WebSocketServerProtocol, data: dict):
         """Handle player joining existing game"""
         game_id = data.get("game_id")
+        player_name = data.get("player_name", "Player 2")
+        player_faction = Faction(data.get("player_faction", "mafia"))
         
         if not game_id or game_id not in self.game_engine.games:
             await self.send_error(websocket, "Game not found")
+            return
+        
+        # Try to join the game
+        success = self.game_engine.join_game(game_id, player_name, player_faction)
+        
+        if not success:
+            await self.send_error(websocket, "Unable to join game (game may be full)")
             return
         
         # Associate websocket with game
@@ -122,7 +126,7 @@ class GameServer:
             "message": "Joined game successfully"
         })
         
-        # Send game state to new client
+        # Send game state to all clients in game
         await self.broadcast_game_state(game_id)
     
     async def handle_play_card(self, websocket: WebSocketServerProtocol, data: dict):

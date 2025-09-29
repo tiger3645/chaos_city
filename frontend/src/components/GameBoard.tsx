@@ -6,6 +6,7 @@ import { Heart, Users, Clock, Target } from 'lucide-react';
 interface GameBoardProps {
     gameState: GameState;
     currentPlayerId?: string | null;
+    gameId?: string;
     onPlayCard?: (cardId: string, zone?: Zone) => void;
     onAttack?: (attackerId: string, targetZone: Zone) => void;
     onNextPhase?: () => void;
@@ -15,16 +16,48 @@ interface GameBoardProps {
 const GameBoard: React.FC<GameBoardProps> = ({
     gameState,
     currentPlayerId,
+    gameId,
     onPlayCard,
     onAttack,
     onNextPhase,
     onDrawCard
 }) => {
+    if (!gameState || !gameState.players || gameState.players.length < 2) {
+        return (
+            <div className="min-h-screen bg-chaos-dark flex items-center justify-center">
+                <div className="text-center text-white">
+                    <div className="animate-spin w-12 h-12 border-4 border-chaos-gold border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <h2 className="text-xl font-bold mb-2">Esperando jugadores...</h2>
+                    <p className="text-gray-400">Cargando estado del juego</p>
+                </div>
+            </div>
+        );
+    }
+
     const currentPlayer = gameState.players.find(p => p.id === currentPlayerId);
     const opponent = gameState.players.find(p => p.id !== currentPlayerId);
 
-    if (!currentPlayer || !opponent) {
-        return <div className="text-white">Loading game...</div>;
+    if (!currentPlayer) {
+        return (
+            <div className="min-h-screen bg-chaos-dark flex items-center justify-center">
+                <div className="text-center text-white">
+                    <h2 className="text-xl font-bold mb-2">Error: Jugador no encontrado</h2>
+                    <p className="text-gray-400">Player ID: {currentPlayerId}</p>
+                    <p className="text-gray-400">Available players: {gameState.players.map(p => p.id).join(', ')}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!opponent) {
+        return (
+            <div className="min-h-screen bg-chaos-dark flex items-center justify-center">
+                <div className="text-center text-white">
+                    <h2 className="text-xl font-bold mb-2">Esperando oponente...</h2>
+                    <p className="text-gray-400">El juego comenzará cuando se una el segundo jugador</p>
+                </div>
+            </div>
+        );
     }
 
     const zones = [Zone.BRUTES, Zone.SHOOTERS, Zone.TALKERS];
