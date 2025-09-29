@@ -1,49 +1,56 @@
 import random
 import uuid
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from models import GameState, Player, Card, CARDS_DB, get_starter_deck, Faction, Zone, CardType, Phase
 
 class GameEngine:
     def __init__(self):
         self.games: Dict[str, GameState] = {}
     
-    def create_game(self, player_name: str, player_faction: Faction) -> str:
-        """Create a new game with one player"""
+    def create_game(self, player_name: str, player_faction: Faction) -> Tuple[str, str]:
+        """Create a new game with one player
+
+        Returns a tuple (game_id, player_id) so the caller can inform the client
+        which player id was assigned to the creator.
+        """
         game_id = str(uuid.uuid4())
-        
+
         # Create player with starter deck
         player = self._create_player(player_name, player_faction)
-        
+
         # Create game state with single player
         game = GameState(
             game_id=game_id,
             players=[player]
         )
-        
+
         # Don't deal initial hands yet - wait for second player
-        
+
         self.games[game_id] = game
-        return game_id
+        return game_id, player.id
     
-    def join_game(self, game_id: str, player_name: str, player_faction: Faction) -> bool:
-        """Add a second player to an existing game"""
+    def join_game(self, game_id: str, player_name: str, player_faction: Faction) -> Optional[str]:
+        """Add a second player to an existing game.
+
+        Returns the assigned player_id on success, or None on failure.
+        """
         if game_id not in self.games:
-            return False
-        
+            return None
+
         game = self.games[game_id]
-        
+
         # Check if game already has 2 players
         if len(game.players) >= 2:
-            return False
-        
+            return None
+
         # Create and add second player
         player = self._create_player(player_name, player_faction)
         game.players.append(player)
-        
+
         # Now deal initial hands to both players
         self._deal_initial_hands(game)
-        
-        return True
+
+        return player.id
     
     def _create_player(self, name: str, faction: Faction) -> Player:
         """Create a player with a starter deck"""
