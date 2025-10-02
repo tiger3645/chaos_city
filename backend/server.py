@@ -52,6 +52,8 @@ class GameServer:
                 await self.handle_create_game(websocket, data)
             elif message_type == "join_game":
                 await self.handle_join_game(websocket, data)
+            elif message_type == "resume_session":
+                await self.handle_resume_session(websocket, data)
             elif message_type == "play_card":
                 await self.handle_play_card(websocket, data)
             elif message_type == "attack":
@@ -77,7 +79,8 @@ class GameServer:
             player_name = data.get("player_name", "Player 1")
             player_faction = Faction(data.get("player_faction", "police"))
             
-            game_id = self.game_engine.create_game(player_name, player_faction)
+            # create_game now returns (game_id, player_id)
+            game_id, player_id = self.game_engine.create_game(player_name, player_faction)
             
             # Associate websocket with game
             self.client_games[websocket] = game_id
@@ -88,6 +91,7 @@ class GameServer:
             await self.send_message(websocket, {
                 "type": "game_created",
                 "game_id": game_id,
+                "player_id": player_id,
                 "message": "Game created successfully. Waiting for second player to join."
             })
             
@@ -107,10 +111,10 @@ class GameServer:
             await self.send_error(websocket, "Game not found")
             return
         
-        # Try to join the game
-        success = self.game_engine.join_game(game_id, player_name, player_faction)
-        
-        if not success:
+        # Try to join the game; join_game now returns player_id or None
+        player_id = self.game_engine.join_game(game_id, player_name, player_faction)
+
+        if not player_id:
             await self.send_error(websocket, "Unable to join game (game may be full)")
             return
         
@@ -123,6 +127,7 @@ class GameServer:
         await self.send_message(websocket, {
             "type": "joined_game",
             "game_id": game_id,
+            "player_id": player_id,
             "message": "Joined game successfully"
         })
         
@@ -212,6 +217,42 @@ class GameServer:
             await self.send_error(websocket, "Not in a game")
             return
         
+        await self.send_game_state(websocket, game_id)
+
+    async def handle_resume_session(self, websocket: WebSocketServerProtocol, data: dict):
+        """Handle resuming a previously-saved session (re-associate websocket with game and player)"""
+        game_id = data.get("game_id")
+        player_id = data.get("player_id")
+
+        if not game_id or not player_id:
+            await self.send_error(websocket, "Invalid resume session data")
+            return
+
+        game_state = self.game_engine.get_game_state(game_id)
+        if not game_state:
+            await self.send_error(websocket, "Game not found")
+            return
+
+        # Verify player exists in the game
+        player_exists = any(p.id == player_id for p in game_state.players)
+        if not player_exists:
+            await self.send_error(websocket, "Player not found in game")
+            return
+
+        # Associate websocket with game
+        self.client_games[websocket] = game_id
+        if game_id not in self.game_clients:
+            self.game_clients[game_id] = set()
+        self.game_clients[game_id].add(websocket)
+
+        # Send confirmation and current state
+        await self.send_message(websocket, {
+            "type": "resumed_session",
+            "game_id": game_id,
+            "player_id": player_id,
+            "message": "Session resumed successfully"
+        })
+
         await self.send_game_state(websocket, game_id)
     
     async def broadcast_game_state(self, game_id: str):

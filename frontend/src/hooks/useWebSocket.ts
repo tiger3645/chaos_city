@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, WebSocketMessage, AttackResult, Faction, Zone } from '../types/game';
+import { GameState, WebSocketMessage, Faction, Zone } from '../types/game';
 import { CONFIG } from '../config';
 
 export const useWebSocket = (url: string) => {
-    const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
     const [isConnected, setIsConnected] = useState(false);
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
@@ -12,6 +11,8 @@ export const useWebSocket = (url: string) => {
 
     const reconnectTimeoutRef = useRef<number | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
+    // queue messages when socket isn't open yet
+    const messageQueue = useRef<WebSocketMessage[]>([]);
     const shouldReconnect = useRef(true);
     const maxReconnectAttempts = CONFIG.WEBSOCKET.RECONNECT_ATTEMPTS;
 
@@ -45,6 +46,22 @@ export const useWebSocket = (url: string) => {
                 setIsConnected(true);
                 setError(null);
                 setConnectionAttempts(0);
+                // Flush any queued messages
+                if (messageQueue.current.length > 0) {
+                    console.log('Flushing queued messages:', messageQueue.current.map(m => m.type));
+                    while (messageQueue.current.length > 0 && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                        const m = messageQueue.current.shift()!;
+                        try {
+                            wsRef.current.send(JSON.stringify(m));
+                            if (CONFIG.DEBUG.WEBSOCKET_LOGS) console.log('Flushed queued message', m.type);
+                        } catch (err) {
+                            console.error('Failed to flush queued message:', err);
+                            setError('Failed to send queued message');
+                            // stop flushing on error
+                            break;
+                        }
+                    }
+                }
             };
 
             ws.onmessage = (event) => {
@@ -137,8 +154,11 @@ export const useWebSocket = (url: string) => {
                 setError('Failed to send message');
             }
         } else {
-            console.error('WebSocket is not connected, current state:', wsRef.current?.readyState);
-            setError('Not connected to server');
+            // Queue message to be sent when socket opens
+            console.log('Socket not open yet, queueing message:', message.type);
+            messageQueue.current.push(message);
+            // Clear any previous connection error since we're retrying on open
+            setError(null);
         }
     }, []);
 
@@ -157,6 +177,15 @@ export const useWebSocket = (url: string) => {
             game_id: gameId,
             player_name: playerName,
             player_faction: playerFaction
+        });
+    }, [sendMessage]);
+
+    // Helper to attempt joining by game ID only (useful for reconnects). Server will apply defaults
+    // for player_name and player_faction if they're not provided.
+    const joinGameById = useCallback((gameId: string) => {
+        sendMessage({
+            type: 'join_game',
+            game_id: gameId
         });
     }, [sendMessage]);
 
@@ -197,6 +226,14 @@ export const useWebSocket = (url: string) => {
         });
     }, [sendMessage]);
 
+    const resumeSession = useCallback((gameId: string, playerId: string) => {
+        sendMessage({
+            type: 'resume_session',
+            game_id: gameId,
+            player_id: playerId
+        });
+    }, [sendMessage]);
+
     useEffect(() => {
         shouldReconnect.current = true;
         connect();
@@ -222,6 +259,8 @@ export const useWebSocket = (url: string) => {
         sendMessage,
         createGame,
         joinGame,
+    joinGameById,
+    resumeSession,
         playCard,
         attack,
         drawCard,

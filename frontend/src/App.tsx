@@ -1,208 +1,274 @@
-import React, { useState, useEffect } from 'react';
-import { useWebSocket } from './hooks/useWebSocket';
-import { useGameSession } from './hooks/useGameSession';
-import { Faction, Zone } from './types/game';
-import GameSetup from './components/GameSetup';
-import GameBoard from './components/GameBoard';
-import ConnectionStatus from './components/ConnectionStatus';
-import { CONFIG } from './config';
+import { useState, useEffect, useRef } from "react";
+import { useWebSocket } from "./hooks/useWebSocket";
+import { useGameSession } from "./hooks/useGameSession";
+import { Faction } from "./types/game";
+import GameSetup from "./components/GameSetup";
+import GameBoard from "./components/GameBoard";
+import ConnectionStatus from "./components/ConnectionStatus";
+import { CONFIG } from "./config";
 
 function App() {
-    const { session, saveSession, clearSession } = useGameSession();
+  const { session, saveSession, clearSession } = useGameSession();
 
-    const [currentView, setCurrentView] = useState<'setup' | 'game'>(
-        session?.view === 'game' ? 'game' : 'setup'
-    );
-    const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(
-        session?.playerId || null
-    );
-    const [currentGameId, setCurrentGameId] = useState<string | null>(
-        session?.gameId || null
-    );
+  const [currentView, setCurrentView] = useState<"setup" | "game">(
+    session?.view === "game" ? "game" : "setup"
+  );
+  const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(
+    session?.playerId || null
+  );
+  const [currentGameId, setCurrentGameId] = useState<string | null>(
+    session?.gameId || null
+  );
 
-    const {
-        isConnected,
-        gameState,
-        lastMessage,
-        error,
-        connectionAttempts,
-        createGame,
-        joinGame,
-        playCard,
-        attack,
-        drawCard,
-        nextPhase,
-        reconnect
-    } = useWebSocket(CONFIG.WEBSOCKET.URL);
-    // Efecto para manejar mensajes WebSocket
-    useEffect(() => {
-        if (lastMessage) {
-            console.log('Received message:', lastMessage.type, lastMessage);
-            console.log('Current gameState:', gameState);
+  // UX states
+  const [isResuming, setIsResuming] = useState(false);
+  const [lastAction, setLastAction] = useState<string | null>(null);
 
-            switch (lastMessage.type) {
-                case 'game_created':
-                    const gameId = lastMessage.game_id;
-                    if (gameId) {
-                        console.log('Game created, ID:', gameId);
-                        setCurrentGameId(gameId);
-                        setCurrentView('game');
-                        // El gameState llegará después, así que esperamos a procesarlo en el otro useEffect
-                    }
-                    break;
-                case 'joined_game':
-                    const joinedGameId = lastMessage.game_id;
-                    if (joinedGameId) {
-                        console.log('Game joined, ID:', joinedGameId);
-                        setCurrentGameId(joinedGameId);
-                        setCurrentView('game');
-                        // El gameState llegará después, así que esperamos a procesarlo en el otro useEffect
-                    }
-                    break;
-                case 'game_state':
-                    // Manejar actualizaciones de estado del juego
-                    console.log('Game state updated');
-                    break;
-                case 'error':
-                    console.error('Game error:', lastMessage.message);
-                    alert(`Error: ${lastMessage.message}`);
-                    break;
-            }
+  const {
+    isConnected,
+    gameState,
+    lastMessage,
+    error,
+    connectionAttempts,
+    createGame,
+    joinGame,
+    joinGameById,
+    resumeSession,
+    drawCard,
+    nextPhase,
+    reconnect,
+  } = useWebSocket(CONFIG.WEBSOCKET.URL);
+
+  // Track whether we've attempted to resume/join for the saved session to avoid races
+  const resumeAttemptRef = useRef<string>("");
+
+  // Handle incoming messages
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    switch (lastMessage.type) {
+      case "game_created": {
+        const gameId = lastMessage.game_id;
+        const playerId = lastMessage.player_id;
+        if (gameId) {
+          setCurrentGameId(gameId);
+          setCurrentView("game");
+          // clear create indicators
+          setLastAction(null);
+          if (playerId) {
+            setCurrentPlayerId(playerId);
+            saveSession(gameId, playerId, "game");
+          }
         }
-    }, [lastMessage]);
-
-    // Efecto separado para manejar cambios en el gameState
-    useEffect(() => {
-        if (gameState && currentView === 'game' && currentGameId) {
-            console.log('Processing gameState with players:', gameState.players?.map(p => p.id));
-
-            // Si tenemos un gameState pero no un playerId, asignarlo
-            if (!currentPlayerId && gameState.players?.length > 0) {
-                // Asignar el primer jugador disponible
-                const playerId = gameState.players[0].id;
-                console.log('Assigning player ID:', playerId);
-                setCurrentPlayerId(playerId);
-                saveSession(currentGameId, playerId, 'game');
-            } else if (currentPlayerId && currentGameId) {
-                // Actualizar la sesión con los datos actuales
-                saveSession(currentGameId, currentPlayerId, 'game');
-            }
+        break;
+      }
+      case "joined_game": {
+        const joinedGameId = lastMessage.game_id;
+        const playerId = lastMessage.player_id;
+        if (joinedGameId) {
+          setCurrentGameId(joinedGameId);
+          setCurrentView("game");
+          // clear join indicators
+          setLastAction(null);
+          if (playerId) {
+            setCurrentPlayerId(playerId);
+            saveSession(joinedGameId, playerId, "game");
+          }
         }
-    }, [gameState, currentView, currentGameId]);
-
-    // Efecto para reconectar a juego guardado
-    useEffect(() => {
-        if (isConnected && session && session.gameId && !gameState) {
-            console.log('Attempting to rejoin saved game:', session.gameId);
-            joinGame(session.gameId);
+        break;
+      }
+      case "resumed_session": {
+        const gameId = lastMessage.game_id;
+        const playerId = lastMessage.player_id;
+        if (gameId) {
+          setCurrentGameId(gameId);
+          setIsResuming(false);
+          setLastAction(null);
+          setCurrentView("game");
+          if (playerId) {
+            setCurrentPlayerId(playerId);
+            saveSession(gameId, playerId, "game");
+          }
         }
-    }, [isConnected, session]);
+        break;
+      }
+      case "game_state": {
+        // clear transient states when receiving an update
+        setIsResuming(false);
+        setLastAction(null);
+        break;
+      }
+      case "error": {
+        console.error("Game error:", lastMessage.message);
+        alert(`Error: ${lastMessage.message}`);
+        // clear pending UX states
+        setIsResuming(false);
+        setLastAction(null);
+        break;
+      }
+      default:
+        break;
+    }
+  }, [lastMessage, saveSession]);
 
-    const handleCreateGame = (playerName: string, playerFaction: Faction) => {
-        createGame(playerName, playerFaction);
-    };
+  // Assign playerId fallback if not known and only one player exists
+  useEffect(() => {
+    if (gameState && currentView === "game" && currentGameId) {
+      if (!currentPlayerId && gameState.players?.length === 1) {
+        const playerId = gameState.players[0].id;
+        setCurrentPlayerId(playerId);
+        saveSession(currentGameId, playerId, "game");
+      } else if (currentPlayerId && currentGameId) {
+        saveSession(currentGameId, currentPlayerId, "game");
+      }
+    }
+  }, [gameState, currentView, currentGameId, currentPlayerId, saveSession]);
 
-    const handleJoinGame = (gameId: string, playerName: string, playerFaction: Faction) => {
-        joinGame(gameId, playerName, playerFaction);
-    };
+  // Reconnect/resume saved session
+  useEffect(() => {
+    if (!isConnected || !session || !session.gameId) return;
 
-    const handlePlayCard = (cardId: string, zone?: Zone) => {
-        if (currentPlayerId) {
-            playCard(currentPlayerId, cardId, zone);
-        }
-    };
+    // If we already have a gameState, no need to resume
+    if (gameState) return;
 
-    const handleAttack = (attackerId: string, targetZone: Zone) => {
-        if (currentPlayerId) {
-            attack(currentPlayerId, attackerId, targetZone);
-        }
-    };
+    const attemptKey = `${session.gameId}:${session.playerId || ""}`;
+    if (resumeAttemptRef.current === attemptKey) return;
 
-    const handleDrawCard = () => {
-        if (currentPlayerId) {
-            drawCard(currentPlayerId);
-        }
-    };
+    resumeAttemptRef.current = attemptKey;
 
-    const handleNewGame = () => {
-        clearSession();
-        setCurrentView('setup');
-        setCurrentPlayerId(null);
-        setCurrentGameId(null);
-    };
+    if (session.playerId) {
+      setIsResuming(true);
+      setLastAction("resume_session");
+      console.log(
+        "Attempting resumeSession for",
+        session.gameId,
+        session.playerId
+      );
+      resumeSession(session.gameId, session.playerId);
+    } else if (typeof joinGameById === "function") {
+      setLastAction("join_game");
+      console.log("Attempting joinGameById for", session.gameId);
+      joinGameById(session.gameId);
+    } else {
+      setLastAction("join_game");
+      console.log("Attempting full join fallback for", session.gameId);
+      joinGame(session.gameId, "Reconnector", Faction.POLICE);
+    }
+  }, [isConnected, session, gameState, joinGameById, resumeSession, joinGame]);
 
-    return (
-        <div className="App relative">
-            {/* Connection Status - Fixed en esquina superior derecha */}
-            <div className="fixed top-4 right-4 z-50">
-                <div className="bg-black/90 border border-gray-600 rounded-lg p-3 shadow-lg">
-                    <ConnectionStatus
-                        isConnected={isConnected}
-                        error={error}
-                        connectionAttempts={connectionAttempts}
-                        onReconnect={reconnect}
-                    />
-                    {currentGameId && (
-                        <div className="text-xs text-blue-300 mt-2 font-mono">
-                            Game ID: {currentGameId}
-                        </div>
-                    )}
-                    <div className="text-xs text-gray-500 mt-1">
-                        {CONFIG.WEBSOCKET.URL}
-                    </div>
-                </div>
+  const handleCreateGame = (playerName: string, playerFaction: Faction) => {
+    setLastAction("create_game");
+    createGame(playerName, playerFaction);
+  };
+
+  const handleJoinGame = (
+    gameId: string,
+    playerName: string,
+    playerFaction: Faction
+  ) => {
+    setLastAction("join_game");
+    joinGame(gameId, playerName, playerFaction);
+  };
+
+  const handleDrawCard = () => {
+    if (currentPlayerId) {
+      drawCard(currentPlayerId);
+    }
+  };
+
+  const handleNewGame = () => {
+    clearSession();
+    setCurrentView("setup");
+    setCurrentPlayerId(null);
+    setCurrentGameId(null);
+  };
+
+  return (
+    <div className="App relative">
+      {/* Connection Status - Fixed en esquina superior derecha */}
+      <div className="fixed top-4 right-4 z-50">
+        <div className="bg-black/90 border border-gray-600 rounded-lg p-3 shadow-lg">
+          <ConnectionStatus
+            isConnected={isConnected}
+            error={error}
+            connectionAttempts={connectionAttempts}
+            onReconnect={reconnect}
+            lastAction={lastAction}
+            gameId={currentGameId}
+          />
+          {currentGameId && (
+            <div className="text-xs text-blue-300 mt-2 font-mono">
+              Game ID: {currentGameId}
             </div>
-
-            {/* Botón Nuevo Juego en juegos activos */}
-            {currentView === 'game' && (
-                <div className="fixed top-4 left-4 z-40">
-                    <button
-                        onClick={handleNewGame}
-                        className="bg-chaos-red text-white px-3 py-1 rounded text-sm font-bold hover:bg-opacity-80 transition-colors"
-                    >
-                        Nuevo Juego
-                    </button>
-                </div>
-            )}
-
-            <div className="min-h-screen">
-                {currentView === 'setup' ? (
-                    <GameSetup
-                        onCreateGame={handleCreateGame}
-                        onJoinGame={handleJoinGame}
-                        isConnected={isConnected}
-                    />
-                ) : (
-                    gameState && currentPlayerId ? (
-                        <GameBoard
-                            gameState={gameState}
-                            currentPlayerId={currentPlayerId}
-                            gameId={currentGameId || undefined}
-                            onPlayCard={handlePlayCard}
-                            onAttack={handleAttack}
-                            onNextPhase={nextPhase}
-                            onDrawCard={handleDrawCard}
-                        />
-                    ) : (
-                        <div className="min-h-screen bg-chaos-dark flex items-center justify-center">
-                            <div className="text-center text-white">
-                                <div className="animate-spin w-12 h-12 border-4 border-chaos-gold border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <h2 className="text-xl font-bold mb-2">Cargando juego...</h2>
-                                <p className="text-gray-400">Game ID: {currentGameId}</p>
-                                <p className="text-gray-400">Player ID: {currentPlayerId}</p>
-                                <button
-                                    onClick={handleNewGame}
-                                    className="mt-4 px-4 py-2 bg-chaos-blue text-white rounded hover:bg-opacity-80"
-                                >
-                                    Cancelar y crear nuevo juego
-                                </button>
-                            </div>
-                        </div>
-                    )
-                )}
-            </div>
+          )}
+          <div className="text-xs text-gray-500 mt-1">
+            {CONFIG.WEBSOCKET.URL}
+          </div>
         </div>
-    );
+      </div>
+
+      {/* Nuevo juego button */}
+      {currentView === "game" && (
+        <div className="fixed top-4 left-4 z-40">
+          <button
+            onClick={handleNewGame}
+            className="bg-chaos-red text-white px-3 py-1 rounded text-sm font-bold hover:bg-opacity-80 transition-colors"
+          >
+            Nuevo Juego
+          </button>
+        </div>
+      )}
+
+      {/* Resuming banner */}
+      {isResuming && (
+        <div className="fixed inset-0 flex items-center justify-center z-40 pointer-events-none">
+          <div className="bg-black/70 text-white px-6 py-4 rounded-lg pointer-events-auto">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
+              <div>
+                <div className="font-bold">Reanudando sesión...</div>
+                {currentGameId && (
+                  <div className="text-xs font-mono">Game: {currentGameId}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-screen">
+        {currentView === "setup" ? (
+          <GameSetup
+            onCreateGame={handleCreateGame}
+            onJoinGame={handleJoinGame}
+            isConnected={isConnected}
+          />
+        ) : gameState && currentPlayerId ? (
+          <GameBoard
+            gameState={gameState}
+            currentPlayerId={currentPlayerId!}
+            onNextPhase={nextPhase}
+            onDrawCard={handleDrawCard}
+          />
+        ) : (
+          <div className="min-h-screen bg-chaos-dark flex items-center justify-center">
+            <div className="text-center text-white">
+              <div className="animate-spin w-12 h-12 border-4 border-chaos-gold border-t-transparent rounded-full mx-auto mb-4"></div>
+              <h2 className="text-xl font-bold mb-2">Cargando juego...</h2>
+              <p className="text-gray-400">Game ID: {currentGameId}</p>
+              <p className="text-gray-400">Player ID: {currentPlayerId}</p>
+              <button
+                onClick={handleNewGame}
+                className="mt-4 px-4 py-2 bg-chaos-blue text-white rounded hover:bg-opacity-80"
+              >
+                Cancelar y crear nuevo juego
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default App;
