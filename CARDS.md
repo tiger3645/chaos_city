@@ -1,6 +1,6 @@
 # 🃏 Mazos de Cartas para "Ciudad del Caos"
 
-* Cada facción tiene **10 cartas iniciales** (incluyendo 1 Líder).
+* Cada facción tiene **11 cartas iniciales** (incluyendo 1 Líder).
 * Los mazos deben respetar el mínimo de tres cartas de facción por cada Líder.
 * Incluye **5 cartas de efecto** por facción.
 * Incorpora las **sinergias** y las **debilidades/fortalezas cruzadas** por facción.
@@ -19,24 +19,24 @@
 
 **Líder**
 
-* **Capitán O’Reilly** (3 ATK / 7 DEF)
+* **Capitán O’Reilly** (3 ATK / 7 DEF / 8 VAL)
 
   * *Habilidad única: “Redada”* – reduce -1 ATK a todos los Brutos enemigos este turno.
 
 **Cartas**
 
-1. **Agente de patrulla** (Bruto, 2/3) – gana +1 DEF si hay otro Policía en la misma zona.
-2. **Sargento con escopeta** (Tirador, 3/2) – daño doble contra Mafiosos.
-3. **Detective de turno** (Charlatán, 2/4) – al entrar, puedes ver la carta superior del mazo rival.
-4. **Guardia antidisturbios** (Bruto, 3/5) – si es destruido, evita el siguiente ataque directo al jugador.
-5. **Francotirador del tejado** (Tirador, 4/1) – ataca primero en su zona.
+1. **Agente de patrulla** (Bruto, 2/3/2) – gana +1 DEF si hay otro Policía en la misma zona.
+2. **Sargento con escopeta** (Tirador, 3/2/3) – daño doble contra Mafiosos.
+3. **Detective de turno** (Charlatán, 2/4/3) – al entrar, puedes ver la carta superior del mazo rival.
+4. **Guardia antidisturbios** (Bruto, 3/5/3) – si es destruido, evita el siguiente ataque directo al jugador.
+5. **Francotirador del tejado** (Tirador, 4/1/3) – ataca primero en su zona.
 
 **Cartas de efecto**
-6. **Sirenas en la noche** – cancela la acción de un enemigo este turno.
-7. **Prisión preventiva** – devuelve una carta enemiga a la mano.
-8. **Sobrecarga de trabajo** – el rival descarta una carta al azar.
-9. **Protección del Estado** – recupera 2 de Reputación.
-10. **Luz de patrulla** – impide que los Ladrones usen habilidades este turno.
+6. **Sirenas en la noche** (Efecto, 3) – Cancela la acción de un enemigo este turno.
+7. **Prisión preventiva** (Efecto, 2) – Devuelve una carta enemiga a la mano.
+8. **Sobrecarga de trabajo** (Efecto, 2) – El rival descarta una carta al azar.
+9. **Protección del Estado** (Efecto, 4) – Recupera 2 de Reputación.
+10. **Luz de patrulla** (Efecto, 5) – Impide que los Ladrones usen habilidades este turno.
 
 ---
 
