@@ -5,7 +5,7 @@ from websockets.server import WebSocketServerProtocol
 from typing import Dict, Set
 import logging
 from game_engine import GameEngine
-from models import Faction, Zone
+from models import Card, Faction, GameState, Zone
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -325,6 +325,8 @@ class GameServer:
         else:
             await self.send_error(websocket, "Failed to change card defense")
 
+
+
     async def broadcast_game_state(self, game_id: str):
         """Broadcast game state to all clients in the game"""
         if game_id in self.game_clients:
@@ -341,8 +343,8 @@ class GameServer:
                 "type": "game_state",
                 "game_state": serialized_state
             })
-    
-    def serialize_game_state(self, game_state) -> dict:
+
+    def serialize_game_state(self, game_state: GameState) -> dict:
         """Convert game state to JSON serializable format"""
         return {
             "game_id": game_state.game_id,
@@ -365,21 +367,22 @@ class GameServer:
                 }
                 for player in game_state.players
             ],
-            "active_environment_card": self.serialize_card(game_state.active_environment_card),
+            # serialize environment card if exists, else None
+            "active_environment_card": self.serialize_card(game_state.active_environment_card) if game_state.active_environment_card else None,
             "available_coins": game_state.available_coins
         }
     
-    def serialize_card(self, card) -> dict:
+    def serialize_card(self, card: Card) -> dict:
         """Convert card to JSON serializable format"""
         return {
             "id": card.id,
             "name": card.name,
             "faction": card.faction.value,
-            "card_type": card.card_type.value,
+            "type": card.type.value,
             "zone": card.zone.value if card.zone else None,
             "attack": card.attack,
             "defense": card.defense,
-            "cost": card.cost,
+            "value": card.value,
             "description": card.description,
             "ability": card.ability,
             "game_id": card.game_id
