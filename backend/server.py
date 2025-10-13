@@ -140,21 +140,21 @@ class GameServer:
         if not game_id:
             await self.send_error(websocket, "Not in a game")
             return
-        
-        player_id = data.get("player_id")
-        card_id = data.get("card_id")
+
+        player_id = str(data.get("player_id"))
+        card_game_id = str(data.get("card_game_id"))
         zone = None
         if data.get("zone"):
             zone = Zone(data.get("zone"))
-        
-        success = self.game_engine.play_card(game_id, player_id, card_id, zone)
+
+        success = self.game_engine.play_card(game_id, player_id, card_game_id, zone)
         
         if success:
             await self.broadcast_game_state(game_id)
             await self.broadcast_to_game(game_id, {
                 "type": "card_played",
                 "player_id": player_id,
-                "card_id": card_id,
+                "card_game_id": card_game_id,
                 "zone": zone.value if zone else None
             })
         else:
@@ -166,13 +166,14 @@ class GameServer:
         if not game_id:
             await self.send_error(websocket, "Not in a game")
             return
-        
-        player_id = data.get("player_id")
-        attacker_id = data.get("attacker_id")
+
+        player_id = str(data.get("player_id"))
+        attacker_id = str(data.get("attacker_id"))
+        defender_id = str(data.get("defender_id"))
         target_zone = Zone(data.get("target_zone"))
-        
-        result = self.game_engine.attack(game_id, player_id, attacker_id, target_zone)
-        
+
+        result = self.game_engine.attack(game_id, player_id, attacker_id, defender_id, target_zone)
+
         await self.broadcast_to_game(game_id, {
             "type": "attack_result",
             "result": result
@@ -187,8 +188,8 @@ class GameServer:
         if not game_id:
             await self.send_error(websocket, "Not in a game")
             return
-        
-        player_id = data.get("player_id")
+
+        player_id = str(data.get("player_id"))
         card = self.game_engine.draw_card(game_id, player_id)
         
         if card:
@@ -255,6 +256,75 @@ class GameServer:
 
         await self.send_game_state(websocket, game_id)
     
+    # Testing utils
+    async def add_player_reputation(self, websocket: WebSocketServerProtocol, data: dict):
+        """Utility to add reputation to a player (for testing)"""
+        game_id = self.client_games.get(websocket)
+        if not game_id:
+            await self.send_error(websocket, "Not in a game")
+            return
+        
+        player_id = str(data.get("player_id"))
+        amount = int(data.get("amount", 0))
+        
+        success = self.game_engine.add_player_reputation(game_id, player_id, amount)
+        
+        if success:
+            await self.broadcast_game_state(game_id)
+            await self.broadcast_to_game(game_id, {
+                "type": "reputation_changed",
+                "player_id": player_id,
+                "amount": amount
+            })
+        else:
+            await self.send_error(websocket, "Failed to change reputation")
+    
+    async def add_player_coins(self, websocket: WebSocketServerProtocol, data: dict):
+        """Utility to add coins to a player (for testing)"""
+        game_id = self.client_games.get(websocket)
+        if not game_id:
+            await self.send_error(websocket, "Not in a game")
+            return
+        
+        player_id = str(data.get("player_id"))
+        amount = int(data.get("amount", 0))
+        
+        success = self.game_engine.add_player_coins(game_id, player_id, amount)
+        
+        if success:
+            await self.broadcast_game_state(game_id)
+            await self.broadcast_to_game(game_id, {
+                "type": "coins_changed",
+                "player_id": player_id,
+                "amount": amount
+            })
+        else:
+            await self.send_error(websocket, "Failed to change coins")
+    
+    async def add_card_defense(self, websocket: WebSocketServerProtocol, data: dict):
+        """Utility to add defense to a card (for testing)"""
+        game_id = self.client_games.get(websocket)
+        if not game_id:
+            await self.send_error(websocket, "Not in a game")
+            return
+        
+        player_id = str(data.get("player_id"))
+        card_game_id = str(data.get("card_game_id"))
+        amount = int(data.get("amount", 0))
+        
+        success = self.game_engine.add_card_defense(game_id, player_id, card_game_id, amount)
+        
+        if success:
+            await self.broadcast_game_state(game_id)
+            await self.broadcast_to_game(game_id, {
+                "type": "card_defense_changed",
+                "player_id": player_id,
+                "card_game_id": card_game_id,
+                "amount": amount
+            })
+        else:
+            await self.send_error(websocket, "Failed to change card defense")
+
     async def broadcast_game_state(self, game_id: str):
         """Broadcast game state to all clients in the game"""
         if game_id in self.game_clients:
@@ -285,20 +355,18 @@ class GameServer:
                     "id": player.id,
                     "name": player.name,
                     "reputation": player.reputation,
-                    "hand_count": len(player.hand),
+                    "hand_cards": [self.serialize_card(card) for card in player.hand],
                     "deck_count": len(player.deck),
                     "field": {
                         zone.value: [self.serialize_card(card) for card in cards]
                         for zone, cards in player.field.items()
                     },
-                    "leader": self.serialize_card(player.leader) if player.leader else None
+                    "coins": player.coins,
                 }
                 for player in game_state.players
             ],
-            "active_environments": {
-                zone.value: self.serialize_card(card) if card else None
-                for zone, card in game_state.active_environments.items()
-            }
+            "active_environment_card": self.serialize_card(game_state.active_environment_card),
+            "available_coins": game_state.available_coins
         }
     
     def serialize_card(self, card) -> dict:
@@ -314,7 +382,7 @@ class GameServer:
             "cost": card.cost,
             "description": card.description,
             "ability": card.ability,
-            "is_unique": card.is_unique
+            "game_id": card.game_id
         }
     
     async def broadcast_to_game(self, game_id: str, message: dict):
@@ -393,7 +461,9 @@ def main():
     logger.info("Server listening on ws://localhost:8000")
     logger.info("Server configuration: ping_interval=20s, ping_timeout=10s")
     
+    # The first line starts the WebSocket server and waits until it is fully initialized.
     asyncio.get_event_loop().run_until_complete(start_server)
+    # The second line keeps the server running indefinitely, handling incoming connections and messages.
     asyncio.get_event_loop().run_forever()
 
 if __name__ == "__main__":

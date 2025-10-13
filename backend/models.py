@@ -33,6 +33,7 @@ class Card:
     defense: int = 0
     description: str = ""
     ability: Optional[str] = None
+    game_id: Optional[str] = None  # To track specific instances of the card in a game
 
 @dataclass
 class Player:
@@ -42,9 +43,9 @@ class Player:
     hand: List[Card] = field(default_factory=list)
     deck: List[Card] = field(default_factory=list)
     field: Dict[Zone, List[Card]] = field(default_factory=lambda: {zone: [] for zone in Zone})
-    leader: Optional[Card] = None
+    coins: int = 0
 
-Phase = Literal["draw", "deploy", "action", "resolution"]
+Phase = Literal["draw", "deploy", "action"]
 
 @dataclass
 class GameState:
@@ -54,7 +55,8 @@ class GameState:
     turn: int = 1
     phase: Phase = "draw"
     winner: Optional[str] = None
-    active_environments: Dict[Zone, Optional[Card]] = field(default_factory=lambda: {zone: None for zone in Zone})
+    active_environment_card: Optional[Card] = None
+    available_coins: int = 20
 
 # Card database
 CARDS_DB = {
