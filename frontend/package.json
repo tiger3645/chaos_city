@@ -2,7 +2,7 @@
     "name": "ciudad-del-caos-frontend",
     "private": true,
     "version": "1.0.0",
-    "description": "Frontend for Ciudad del Caos card game",
+    "description": "Ciudad del Caos",
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
