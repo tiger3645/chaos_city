@@ -1,5 +1,6 @@
 import asyncio
 import json
+import random
 import websockets
 from websockets.server import WebSocketServerProtocol
 from typing import Dict, Set
@@ -130,6 +131,19 @@ class GameServer:
             "player_id": player_id,
             "message": "Joined game successfully"
         })
+
+        # "flip a coin" to decide who starts
+        game_state = self.game_engine.get_game_state(game_id)
+        if game_state and game_state.players:
+            starting_player_id = random.choice(
+                [player.id for player in game_state.players]
+            )
+        else:
+            await self.send_error(websocket, "Game state not found or has no players")
+            return
+
+        # update starting player in game engine
+        self.game_engine.set_starting_player(game_id, starting_player_id)
         
         # Send game state to all clients in game
         await self.broadcast_game_state(game_id)

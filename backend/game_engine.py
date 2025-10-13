@@ -72,6 +72,20 @@ class GameEngine:
             deck=deck,
         )
     
+    def set_starting_player(self, game_id: str, player_id: str) -> bool:
+        """Set which player starts the game"""
+        if game_id not in self.games:
+            return False
+        
+        game = self.games[game_id]
+        
+        for i, player in enumerate(game.players):
+            if player.id == player_id:
+                game.current_player = i
+                return True
+        
+        return False
+
     def _deal_initial_hands(self, game: GameState):
         """Deal 5 cards to each player"""
         for player in game.players:
