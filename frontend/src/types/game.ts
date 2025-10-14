@@ -14,35 +14,34 @@ export enum CardType {
 }
 
 export enum Zone {
-    BRUTES = 'brutes',
-    SHOOTERS = 'shooters',
-    TALKERS = 'talkers'
+    FIGHTER = 'fighter',
+    GUNSINGER = 'gunslinger',
+    TALKER = 'talker'
 }
 
 export type Phase = 'draw' | 'deploy' | 'action' | 'resolution';
 
 export interface Card {
-    id: string;
+    id: number;
+    game_id: string;
     name: string;
     faction: Faction;
-    card_type: CardType;
+    type: CardType;
     zone?: Zone;
     attack: number;
     defense: number;
-    cost: number;
+    value: number;
     description: string;
     ability?: string;
-    is_unique: boolean;
 }
 
 export interface Player {
     id: string;
     name: string;
     reputation: number;
-    hand_count: number;
+    hand_cards: Array<Card>;
     deck_count: number;
     field: Record<Zone, Card[]>;
-    leader?: Card;
 }
 
 export interface GameState {
@@ -52,7 +51,8 @@ export interface GameState {
     phase: Phase;
     winner?: string;
     players: Player[];
-    active_environments: Record<Zone, Card | null>;
+    active_environment_card: Card | null;
+    available_coins: number;
 }
 
 export interface WebSocketMessage {

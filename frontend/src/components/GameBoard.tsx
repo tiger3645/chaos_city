@@ -60,7 +60,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
     );
   }
 
-  const zones = [Zone.BRUTES, Zone.SHOOTERS, Zone.TALKERS];
+  const zones = [Zone.FIGHTER, Zone.GUNSINGER, Zone.TALKER];
   const isCurrentPlayerTurn =
     gameState.current_player === gameState.players.indexOf(currentPlayer);
 
@@ -110,7 +110,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <span>{opponent.reputation}</span>
           </div>
           <span className="text-sm text-gray-400">
-            Cartas en mano: {opponent.hand_count} | Mazo: {opponent.deck_count}
+            Cartas en mano: {opponent.hand_cards.length} | Mazo: {opponent.deck_count}
           </span>
         </div>
 
@@ -127,13 +127,14 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   <Card key={`${card.id}-${index}`} card={card} />
                 ))}
               </div>
-              {gameState.active_environments[zone] && (
+              {gameState.active_environment_card && (
                 <div className="mt-2 p-2 bg-purple-900/30 rounded border border-purple-500">
-                  <Card card={gameState.active_environments[zone]!} />
+                  <Card card={gameState.active_environment_card} />
                 </div>
               )}
             </div>
-          ))}
+          )
+          )}
         </div>
       </div>
 
@@ -147,7 +148,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <span>{currentPlayer.reputation}</span>
           </div>
           <span className="text-sm text-gray-400">
-            Cartas en mano: {currentPlayer.hand_count} | Mazo:{" "}
+            Cartas en mano: {currentPlayer.hand_cards.length} | Mazo:{" "}
             {currentPlayer.deck_count}
           </span>
           {isCurrentPlayerTurn && (
@@ -182,9 +183,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   />
                 ))}
               </div>
-              {gameState.active_environments[zone] && (
+              {gameState.active_environment_card && (
                 <div className="mt-2 p-2 bg-purple-900/30 rounded border border-purple-500">
-                  <Card card={gameState.active_environments[zone]!} />
+                  <Card card={gameState.active_environment_card} />
                 </div>
               )}
             </div>
