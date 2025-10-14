@@ -29,102 +29,106 @@ export const useWebSocket = (url: string) => {
             return;
         }
 
-        // Don't reconnect if we've hit the max attempts
-        if (connectionAttempts >= maxReconnectAttempts) {
-            console.log('Max reconnection attempts reached');
-            setError('Unable to connect to server after multiple attempts');
-            return;
-        }
+        setConnectionAttempts(prev => {
+            // Don't reconnect if we've hit the max attempts
+            if (prev >= maxReconnectAttempts) {
+                console.log('Max reconnection attempts reached');
+                setError('Unable to connect to server after multiple attempts');
+                return prev;
+            }
 
-        try {
-            console.log(`Connecting to WebSocket... (attempt ${connectionAttempts + 1})`);
-            const ws = new WebSocket(url);
-            wsRef.current = ws;
+            try {
+                console.log(`Connecting to WebSocket... (attempt ${prev + 1})`);
+                const ws = new WebSocket(url);
+                wsRef.current = ws;
 
-            ws.onopen = () => {
-                console.log('Connected to WebSocket server');
-                setIsConnected(true);
-                setError(null);
-                setConnectionAttempts(0);
-                // Flush any queued messages
-                if (messageQueue.current.length > 0) {
-                    console.log('Flushing queued messages:', messageQueue.current.map(m => m.type));
-                    while (messageQueue.current.length > 0 && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                        const m = messageQueue.current.shift()!;
-                        try {
-                            wsRef.current.send(JSON.stringify(m));
-                            if (CONFIG.DEBUG.WEBSOCKET_LOGS) console.log('Flushed queued message', m.type);
-                        } catch (err) {
-                            console.error('Failed to flush queued message:', err);
-                            setError('Failed to send queued message');
-                            // stop flushing on error
-                            break;
+                ws.onopen = () => {
+                    console.log('Connected to WebSocket server');
+                    setIsConnected(true);
+                    setError(null);
+                    setConnectionAttempts(0);
+                    // Flush any queued messages
+                    if (messageQueue.current.length > 0) {
+                        console.log('Flushing queued messages:', messageQueue.current.map(m => m.type));
+                        while (messageQueue.current.length > 0 && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                            const m = messageQueue.current.shift()!;
+                            try {
+                                wsRef.current.send(JSON.stringify(m));
+                                if (CONFIG.DEBUG.WEBSOCKET_LOGS) console.log('Flushed queued message', m.type);
+                            } catch (err) {
+                                console.error('Failed to flush queued message:', err);
+                                setError('Failed to send queued message');
+                                // stop flushing on error
+                                break;
+                            }
                         }
                     }
-                }
-            };
+                };
 
-            ws.onmessage = (event) => {
-                try {
-                    const message: WebSocketMessage = JSON.parse(event.data);
-                    setLastMessage(message);
+                ws.onmessage = (event) => {
+                    try {
+                        const message: WebSocketMessage = JSON.parse(event.data);
+                        setLastMessage(message);
 
-                    switch (message.type) {
-                        case 'game_state':
-                            setGameState(message.game_state);
-                            break;
-                        case 'error':
-                            setError(message.message);
-                            break;
-                        case 'connected':
-                        case 'game_created':
-                        case 'joined_game':
-                        case 'card_played':
-                        case 'attack_result':
-                            // Handle these in components
-                            break;
-                        default:
-                            console.log('Unhandled message type:', message.type);
-                    }
-                } catch (err) {
-                    console.error('Error parsing WebSocket message:', err);
-                }
-            };
-
-            ws.onclose = (event) => {
-                console.log('WebSocket connection closed', event.code, event.reason);
-                setIsConnected(false);
-                wsRef.current = null;
-
-                // Only attempt to reconnect if it should reconnect and wasn't a clean close
-                if (shouldReconnect.current && event.code !== 1000) {
-                    const delay = Math.min(
-                        CONFIG.WEBSOCKET.RECONNECT_DELAY_BASE * Math.pow(2, connectionAttempts),
-                        CONFIG.WEBSOCKET.RECONNECT_DELAY_MAX
-                    );
-                    console.log(`Attempting to reconnect in ${delay}ms...`);
-
-                    setConnectionAttempts(prev => prev + 1);
-
-                    reconnectTimeoutRef.current = window.setTimeout(() => {
-                        if (shouldReconnect.current) {
-                            connect();
+                        switch (message.type) {
+                            case 'game_state':
+                                setGameState(message.game_state);
+                                break;
+                            case 'error':
+                                setError(message.message);
+                                break;
+                            case 'connected':
+                            case 'game_created':
+                            case 'joined_game':
+                            case 'card_played':
+                            case 'attack_result':
+                                // Handle these in components
+                                break;
+                            default:
+                                console.log('Unhandled message type:', message.type);
                         }
-                    }, delay);
-                }
-            };
+                    } catch (err) {
+                        console.error('Error parsing WebSocket message:', err);
+                    }
+                };
 
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                setError('Connection error occurred');
-            };
+                ws.onclose = (event) => {
+                    console.log('WebSocket connection closed', event.code, event.reason);
+                    setIsConnected(false);
+                    wsRef.current = null;
 
-        } catch (err) {
-            console.error('Failed to create WebSocket connection:', err);
-            setError('Failed to connect to server');
-            setConnectionAttempts(prev => prev + 1);
-        }
-    }, [url, connectionAttempts]);
+                    // Only attempt to reconnect if it should reconnect and wasn't a clean close
+                    if (shouldReconnect.current && event.code !== 1000) {
+                        setConnectionAttempts(prevAttempts => {
+                            const delay = Math.min(
+                                CONFIG.WEBSOCKET.RECONNECT_DELAY_BASE * Math.pow(2, prevAttempts),
+                                CONFIG.WEBSOCKET.RECONNECT_DELAY_MAX
+                            );
+                            console.log(`Attempting to reconnect in ${delay}ms...`);
+
+                            reconnectTimeoutRef.current = window.setTimeout(() => {
+                                if (shouldReconnect.current) {
+                                    connect();
+                                }
+                            }, delay);
+
+                            return prevAttempts + 1;
+                        });
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    setError('Connection error occurred');
+                };
+
+            } catch (err) {
+                console.error('Failed to create WebSocket connection:', err);
+                setError('Failed to connect to server');
+            }
+            return prev + 1;
+        });
+    }, [url]);
 
     const disconnect = useCallback(() => {
         shouldReconnect.current = false;
@@ -259,8 +263,8 @@ export const useWebSocket = (url: string) => {
         sendMessage,
         createGame,
         joinGame,
-    joinGameById,
-    resumeSession,
+        joinGameById,
+        resumeSession,
         playCard,
         attack,
         drawCard,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface GameSession {
     gameId: string;
@@ -10,7 +10,7 @@ interface GameSession {
 export const useGameSession = () => {
     const [session, setSession] = useState<GameSession | null>(null);
 
-    const loadSession = () => {
+    const loadSession = useCallback(() => {
         try {
             const saved = localStorage.getItem('chaosCity_gameSession');
             if (saved) {
@@ -25,9 +25,9 @@ export const useGameSession = () => {
             console.warn('Failed to load game session:', error);
         }
         return null;
-    };
+    }, []);
 
-    const saveSession = (gameId: string, playerId: string, view: 'setup' | 'game') => {
+    const saveSession = useCallback((gameId: string, playerId: string, view: 'setup' | 'game') => {
         try {
             const newSession: GameSession = {
                 gameId,
@@ -40,16 +40,16 @@ export const useGameSession = () => {
         } catch (error) {
             console.warn('Failed to save game session:', error);
         }
-    };
+    }, []);
 
-    const clearSession = () => {
+    const clearSession = useCallback(() => {
         try {
             localStorage.removeItem('chaosCity_gameSession');
             setSession(null);
         } catch (error) {
             console.warn('Failed to clear game session:', error);
         }
-    };
+    }, []);
 
     // Cargar sesión al inicializar el hook
     useEffect(() => {

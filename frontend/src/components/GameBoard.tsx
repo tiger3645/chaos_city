@@ -192,31 +192,31 @@ const GameBoard: React.FC<GameBoardProps> = ({
           ))}
         </div>
 
-        {/* Hand (would be populated from websocket) */}
         <div className="mt-6 p-4 bg-black/30 rounded-lg">
           <h3 className="font-bold mb-2">Tu mano</h3>
-          <div className="flex gap-2 overflow-x-auto">
-            {/* Hand cards would be displayed here */}
-            <div className="text-gray-400 text-center py-8">
-              Cartas en mano se mostrarán aquí
-            </div>
+          <div className="text-gray-400 text-center py-8 flex flex-row flex-wrap justify-center gap-2">
+            {currentPlayer.hand_cards.map((card) => (
+              <Card key={card.id} card={card} />
+            ))}
           </div>
         </div>
       </div>
 
       {/* Game Status */}
-      {gameState.winner && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <div className="bg-white text-black p-8 rounded-lg text-center">
-            <h2 className="text-3xl font-bold mb-4">¡Juego Terminado!</h2>
-            <p className="text-xl">
-              Ganador:{" "}
-              {gameState.players.find((p) => p.id === gameState.winner)?.name}
-            </p>
+      {
+        gameState.winner && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+            <div className="bg-white text-black p-8 rounded-lg text-center">
+              <h2 className="text-3xl font-bold mb-4">¡Juego Terminado!</h2>
+              <p className="text-xl">
+                Ganador:{" "}
+                {gameState.players.find((p) => p.id === gameState.winner)?.name}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

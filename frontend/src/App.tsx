@@ -122,7 +122,8 @@ function App() {
         saveSession(currentGameId, currentPlayerId, "game");
       }
     }
-  }, [gameState, currentView, currentGameId, currentPlayerId, saveSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState, currentView, currentGameId, currentPlayerId]);
 
   // Reconnect/resume saved session
   useEffect(() => {
@@ -154,7 +155,8 @@ function App() {
       console.log("Attempting full join fallback for", session.gameId);
       joinGame(session.gameId, "Reconnector", Faction.POLICE);
     }
-  }, [isConnected, session, gameState, joinGameById, resumeSession, joinGame]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, session?.gameId, session?.playerId, gameState]);
 
   const handleCreateGame = (playerName: string, playerFaction: Faction) => {
     setLastAction("create_game");
@@ -185,8 +187,9 @@ function App() {
 
   return (
     <div className="App relative">
-      {/* Connection Status - Fixed en esquina superior derecha */}
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-50" onClick={() => {
+        navigator.clipboard.writeText(currentGameId || "");
+      }}>
         <div className="bg-black/90 border border-gray-600 rounded-lg p-3 shadow-lg">
           <ConnectionStatus
             isConnected={isConnected}

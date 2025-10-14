@@ -18,58 +18,56 @@ const factionColors = {
 };
 
 const zoneIcons = {
-    [Zone.BRUTES]: Sword,
-    [Zone.SHOOTERS]: Zap,
-    [Zone.TALKERS]: Star
+    [Zone.FIGHTER]: Sword,
+    [Zone.GUNSINGER]: Zap,
+    [Zone.TALKER]: Star,
 };
 
 const Card: React.FC<CardProps> = ({ card, onClick, isPlayable, isSelected }) => {
-    const ZoneIcon = card.zone ? zoneIcons[card.zone] : null;
+    const ZoneIcon = card.zone ? zoneIcons[card.zone] : Star;
 
     return (
         <div
-            className={`
-        relative w-32 h-44 rounded-lg border-2 p-2 cursor-pointer
+            className={`relative w-48 h-96 rounded-lg border-2 p-2 cursor-pointer
         card-shadow card-hover select-none
         ${factionColors[card.faction]}
         ${isSelected ? 'ring-4 ring-yellow-400' : ''}
         ${isPlayable ? 'hover:ring-2 hover:ring-white' : ''}
-        ${!isPlayable && onClick ? 'opacity-60' : ''}
-      `}
+        ${!isPlayable && onClick ? 'opacity-60' : ''}`}
             onClick={isPlayable ? onClick : undefined}
         >
             {/* Card Header */}
             <div className="flex justify-between items-start mb-1">
-                <div className="flex items-center gap-1">
-                    {ZoneIcon && <ZoneIcon className="w-3 h-3" />}
-                    {card.card_type === 'leader' && <Star className="w-3 h-3 text-yellow-400" />}
+                <div className="flex items-center gap-1 border border-gray-600 bg-black/30 px-1 rounded">
+                    {ZoneIcon ? <ZoneIcon className="w-3 h-6" /> : null}
                 </div>
-                <div className="text-xs font-bold bg-black/30 px-1 rounded">
-                    {card.cost}
+                <div className="text-lg font-bold bg-black/30 px-1 rounded">
+                    {card.value}
                 </div>
             </div>
 
             {/* Card Name */}
-            <h3 className="text-xs font-bold text-white mb-1 leading-tight">
+            <h3 className="text-xl font-bold text-white mb-2 leading-tight h-12 overflow-hidden">
                 {card.name}
             </h3>
+            <hr className="border-gray-600 mb-2" />
 
             {/* Stats */}
             {(card.attack > 0 || card.defense > 0) && (
                 <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-1 text-red-400">
-                        <Sword className="w-3 h-3" />
-                        <span className="text-xs font-bold">{card.attack}</span>
+                    <div className="flex items-center gap-1 text-red-400 border border-red-600 p-1 rounded bg-black/20">
+                        <Sword className="w-4 h-4" />
+                        <span className="text-md font-bold">{card.attack}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-blue-400">
-                        <Shield className="w-3 h-3" />
-                        <span className="text-xs font-bold">{card.defense}</span>
+                    <div className="flex items-center gap-1 text-blue-400 border border-blue-600 p-1 rounded bg-black/20">
+                        <Shield className="w-4 h-4" />
+                        <span className="text-md font-bold">{card.defense}</span>
                     </div>
                 </div>
             )}
 
             {/* Description */}
-            <p className="text-xs text-gray-300 leading-tight overflow-hidden">
+            <p className="text-md text-gray-100 leading-tight overflow-hidden">
                 {card.description}
             </p>
 

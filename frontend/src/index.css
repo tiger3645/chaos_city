@@ -24,21 +24,38 @@ body {
 }
 
 .faction-police {
-    @apply border-blue-500 bg-gradient-to-br from-blue-900/20 to-blue-800/20;
+    /* Avoid @apply for utility classes that may not be available during processing.
+       Use explicit CSS border and gradient to replicate the visual style. */
+    border: 1px solid #3b82f6;
+    /* blue-500 */
+    background-image: linear-gradient(to bottom right, rgba(30, 58, 138, 0.2), rgba(37, 99, 235, 0.2));
+    /* approx from-blue-900/20 to-blue-800/20 */
 }
 
 .faction-mafia {
-    @apply border-red-500 bg-gradient-to-br from-red-900/20 to-red-800/20;
+    border: 1px solid #ef4444;
+    /* red-500 */
+    background-image: linear-gradient(to bottom right, rgba(99, 2, 2, 0.2), rgba(185, 28, 28, 0.2));
+    /* approx from-red-900/20 to-red-800/20 */
 }
 
 .faction-detective {
-    @apply border-green-500 bg-gradient-to-br from-green-900/20 to-green-800/20;
+    border: 1px solid #10b981;
+    /* green-500 */
+    background-image: linear-gradient(to bottom right, rgba(4, 120, 87, 0.2), rgba(5, 150, 105, 0.2));
+    /* approx from-green-900/20 to-green-800/20 */
 }
 
 .faction-thief {
-    @apply border-purple-500 bg-gradient-to-br from-purple-900/20 to-purple-800/20;
+    border: 1px solid #a855f7;
+    /* purple-500 */
+    background-image: linear-gradient(to bottom right, rgba(55, 0, 60, 0.2), rgba(124, 58, 237, 0.2));
+    /* approx from-purple-900/20 to-purple-800/20 */
 }
 
 .faction-wildcard {
-    @apply border-yellow-500 bg-gradient-to-br from-yellow-900/20 to-yellow-800/20;
+    border: 1px solid #f59e0b;
+    /* yellow-500 */
+    background-image: linear-gradient(to bottom right, rgba(124, 58, 0, 0.2), rgba(217, 119, 6, 0.2));
+    /* approx from-yellow-900/20 to-yellow-800/20 */
 }
