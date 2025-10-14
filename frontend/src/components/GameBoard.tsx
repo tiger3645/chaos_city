@@ -28,8 +28,21 @@ const GameBoard: React.FC<GameBoardProps> = ({
     );
   }
 
-  const currentPlayer = gameState.players.find((p) => p.id === currentPlayerId);
-  const opponent = gameState.players.find((p) => p.id !== currentPlayerId);
+  // Server-provided current player index
+  const serverCurrentIndex = Number.isFinite(gameState.current_player)
+    ? gameState.current_player
+    : 0;
+  const serverCurrentPlayer = gameState.players[serverCurrentIndex];
+
+  // Determine which player object represents the local client (if any)
+  const localPlayer = currentPlayerId
+    ? gameState.players.find((p) => p.id === currentPlayerId) || null
+    : null;
+
+  // Use localPlayer for UI when available, otherwise show the server's current player
+  const currentPlayer = localPlayer || serverCurrentPlayer || null;
+
+  const opponent = gameState.players.find((p) => p.id !== currentPlayer?.id);
 
   if (!currentPlayer) {
     return (
@@ -61,8 +74,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
   }
 
   const zones = [Zone.FIGHTER, Zone.GUNSINGER, Zone.TALKER];
+  // The turn belongs to whoever is at gameState.current_player. Only consider it
+  // "Tu turno" when the local player's id matches that server index.
   const isCurrentPlayerTurn =
-    gameState.current_player === gameState.players.indexOf(currentPlayer);
+    !!localPlayer &&
+    serverCurrentPlayer &&
+    localPlayer.id === serverCurrentPlayer.id;
 
   return (
     <div className="min-h-screen bg-chaos-dark text-white p-4">
@@ -110,7 +127,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <span>{opponent.reputation}</span>
           </div>
           <span className="text-sm text-gray-400">
-            Cartas en mano: {opponent.hand_cards.length} | Mazo: {opponent.deck_count}
+            Cartas en mano: {opponent.hand_cards.length} | Mazo:{" "}
+            {opponent.deck_count}
           </span>
         </div>
 
@@ -133,8 +151,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 </div>
               )}
             </div>
-          )
-          )}
+          ))}
         </div>
       </div>
 
@@ -203,20 +220,18 @@ const GameBoard: React.FC<GameBoardProps> = ({
       </div>
 
       {/* Game Status */}
-      {
-        gameState.winner && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-            <div className="bg-white text-black p-8 rounded-lg text-center">
-              <h2 className="text-3xl font-bold mb-4">¡Juego Terminado!</h2>
-              <p className="text-xl">
-                Ganador:{" "}
-                {gameState.players.find((p) => p.id === gameState.winner)?.name}
-              </p>
-            </div>
+      {gameState.winner && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <div className="bg-white text-black p-8 rounded-lg text-center">
+            <h2 className="text-3xl font-bold mb-4">¡Juego Terminado!</h2>
+            <p className="text-xl">
+              Ganador:{" "}
+              {gameState.players.find((p) => p.id === gameState.winner)?.name}
+            </p>
           </div>
-        )
-      }
-    </div >
+        </div>
+      )}
+    </div>
   );
 };
 

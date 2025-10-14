@@ -187,9 +187,12 @@ function App() {
 
   return (
     <div className="App relative">
-      <div className="fixed top-4 right-4 z-50" onClick={() => {
-        navigator.clipboard.writeText(currentGameId || "");
-      }}>
+      <div
+        className="fixed top-4 right-4 z-50"
+        onClick={() => {
+          navigator.clipboard.writeText(currentGameId || "");
+        }}
+      >
         <div className="bg-black/90 border border-gray-600 rounded-lg p-3 shadow-lg">
           <ConnectionStatus
             isConnected={isConnected}
@@ -204,23 +207,8 @@ function App() {
               Game ID: {currentGameId}
             </div>
           )}
-          <div className="text-xs text-gray-500 mt-1">
-            {CONFIG.WEBSOCKET.URL}
-          </div>
         </div>
       </div>
-
-      {/* Nuevo juego button */}
-      {currentView === "game" && (
-        <div className="fixed top-4 left-4 z-40">
-          <button
-            onClick={handleNewGame}
-            className="bg-chaos-red text-white px-3 py-1 rounded text-sm font-bold hover:bg-opacity-80 transition-colors"
-          >
-            Nuevo Juego
-          </button>
-        </div>
-      )}
 
       {/* Resuming banner */}
       {isResuming && (
