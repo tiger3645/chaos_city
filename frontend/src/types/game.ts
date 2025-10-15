@@ -42,6 +42,7 @@ export interface Player {
     hand_cards: Array<Card>;
     deck_count: number;
     field: Record<Zone, Card[]>;
+    coins: number;
 }
 
 export interface GameState {

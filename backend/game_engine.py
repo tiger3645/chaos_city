@@ -109,8 +109,11 @@ class GameEngine:
         if not player or not player.deck:
             return None
         
-        card = player.deck.pop()
-        player.hand.append(card)
+        if game.phase == "draw":
+            card = player.deck.pop()
+            player.hand.append(card)
+            game.phase = "deploy"
+
         return card
     
     def get_turn_coins(self, game_id: str, player_id: str) -> Optional[int]:
@@ -271,6 +274,8 @@ class GameEngine:
             # Next player's turn
             game.current_player = (game.current_player + 1) % len(game.players)
             game.phase = "draw"
+            # give each player 3 coins at start of turn
+            self.get_turn_coins(game_id, game.players[game.current_player].id)
             if game.current_player == 0:  # Back to first player
                 game.turn += 1
         

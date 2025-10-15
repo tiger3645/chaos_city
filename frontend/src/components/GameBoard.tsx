@@ -1,7 +1,14 @@
 import React from "react";
 import { GameState, Zone } from "../types/game";
 import Card from "./Card";
-import { Heart, Users, Clock } from "lucide-react";
+import {
+  Heart,
+  Users,
+  Clock,
+  ArrowBigRight,
+  Coins,
+  Layers,
+} from "lucide-react";
 
 interface GameBoardProps {
   gameState: GameState;
@@ -94,42 +101,31 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <span>
               Turno {gameState.turn} - {gameState.phase}
             </span>
+            <Coins className="w-4 h-4 text-yellow-400 ml-2" />
+            <span>{gameState.available_coins}</span>
           </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          {isCurrentPlayerTurn && (
-            <button
-              onClick={onNextPhase}
-              className="px-4 py-2 bg-chaos-gold text-black font-bold rounded hover:bg-opacity-80"
-            >
-              Siguiente Fase
-            </button>
-          )}
-          {gameState.phase === "draw" && isCurrentPlayerTurn && (
-            <button
-              onClick={onDrawCard}
-              className="px-4 py-2 bg-chaos-blue text-white font-bold rounded hover:bg-opacity-80"
-            >
-              Robar Carta
-            </button>
-          )}
         </div>
       </div>
 
       {/* Opponent Area */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5" />
-          <h2 className="text-xl font-bold">{opponent.name}</h2>
-          <div className="flex items-center gap-1 ml-4">
-            <Heart className="w-4 h-4 text-red-400" />
-            <span>{opponent.reputation}</span>
+        <div className="flex items-center justify-end gap-2 mb-4">
+          <div>
+            <div className="flex items-center justify-end gap-2 mb-2">
+              <Users className="w-5 h-5" />
+              <h2 className="text-xl font-bold">{opponent.name}</h2>
+            </div>
+            <div className="flex items-center gap-1">
+              <Heart className="w-4 h-4 text-red-400" />
+              <span>{opponent.reputation}</span>
+
+              <Coins className="w-4 h-4 text-yellow-400 ml-2" />
+              <span>{opponent.coins}</span>
+
+              <Layers className="w-4 h-4 text-gray-400 ml-2" />
+              {opponent.deck_count}
+            </div>
           </div>
-          <span className="text-sm text-gray-400">
-            Cartas en mano: {opponent.hand_cards.length} | Mazo:{" "}
-            {opponent.deck_count}
-          </span>
         </div>
 
         {/* Opponent Field */}
@@ -157,22 +153,49 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* Player Area */}
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5" />
-          <h2 className="text-xl font-bold">{currentPlayer.name}</h2>
-          <div className="flex items-center gap-1 ml-4">
-            <Heart className="w-4 h-4 text-red-400" />
-            <span>{currentPlayer.reputation}</span>
+        <div className="flex items-center gap-2 mb-4 justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5" />
+              <h2 className="text-xl font-bold">{currentPlayer.name}</h2>
+              {isCurrentPlayerTurn && (
+                <span className="ml-4 px-2 py-1 bg-green-600 text-white text-sm rounded">
+                  Tu turno
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Heart className="w-4 h-4 text-red-400" />
+              <span>{currentPlayer.reputation}</span>
+
+              <Coins className="w-4 h-4 text-yellow-400 ml-2" />
+              <span>{currentPlayer.coins}</span>
+
+              <Layers className="w-4 h-4 text-gray-400 ml-2" />
+              {currentPlayer.deck_count}
+            </div>
           </div>
-          <span className="text-sm text-gray-400">
-            Cartas en mano: {currentPlayer.hand_cards.length} | Mazo:{" "}
-            {currentPlayer.deck_count}
-          </span>
-          {isCurrentPlayerTurn && (
-            <span className="ml-4 px-2 py-1 bg-green-600 text-white text-sm rounded">
-              Tu turno
-            </span>
-          )}
+          <div className="flex items-center gap-4 flex-1 justify-end">
+            {gameState.phase !== "draw" && isCurrentPlayerTurn && (
+              <button
+                onClick={onNextPhase}
+                className="px-4 py-2 bg-chaos-gold text-black font-bold rounded hover:opacity-80 active:opacity-100 cursor-pointer flex"
+              >
+                Siguiente Fase
+                <ArrowBigRight className="ms-2" />
+              </button>
+            )}
+            {gameState.phase === "draw" && isCurrentPlayerTurn && (
+              <button
+                onClick={onDrawCard}
+                className="px-4 py-2 bg-chaos-blue text-white font-bold rounded hover:opacity-80 active:opacity-100 cursor-pointer flex items-center"
+              >
+                Robar Carta
+                <Layers className="inline w-4 h-4 mr-1 ml-3" />
+                {currentPlayer.deck_count}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Player Field */}
