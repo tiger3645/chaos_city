@@ -193,11 +193,11 @@ export const useWebSocket = (url: string) => {
         });
     }, [sendMessage]);
 
-    const playCard = useCallback((playerId: string, cardId: string, zone?: Zone) => {
+    const playCard = useCallback((playerId: string, cardGameId: string, zone?: Zone) => {
         sendMessage({
             type: 'play_card',
             player_id: playerId,
-            card_id: cardId,
+            card_game_id: cardGameId,
             zone: zone
         });
     }, [sendMessage]);

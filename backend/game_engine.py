@@ -178,6 +178,11 @@ class GameEngine:
         elif card.type == CardType.ENVIRONMENT and zone:
             # Place environment in specified zone
             game.active_environment_card = card
+        else:
+            return False
+        
+        # Deduct coins
+        player.coins -= card.value
 
         return True
 

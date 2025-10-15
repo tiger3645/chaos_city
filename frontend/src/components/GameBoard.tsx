@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { GameState, Zone } from "../types/game";
 import Card from "./Card";
 import {
@@ -15,6 +15,7 @@ interface GameBoardProps {
   currentPlayerId?: string | null;
   onNextPhase?: () => void;
   onDrawCard?: () => void;
+  onPlayCard?: (cardGameId: string) => void;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -22,6 +23,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   currentPlayerId,
   onNextPhase,
   onDrawCard,
+  onPlayCard,
 }) => {
   if (!gameState || !gameState.players || gameState.players.length < 2) {
     return (
@@ -87,6 +89,28 @@ const GameBoard: React.FC<GameBoardProps> = ({
     !!localPlayer &&
     serverCurrentPlayer &&
     localPlayer.id === serverCurrentPlayer.id;
+
+  // Estado para la carta seleccionada
+  const [selectedCardGameId, setSelectedCardGameId] = useState<string | null>(null);
+
+  // Handler para seleccionar/deseleccionar carta
+  const handleCardClick = (cardGameId: string) => {
+    if (selectedCardGameId === cardGameId) {
+      // Deseleccionar si ya está seleccionada
+      setSelectedCardGameId(null);
+    } else {
+      // Seleccionar nueva carta
+      setSelectedCardGameId(cardGameId);
+    }
+  };
+
+  // Handler para jugar carta seleccionada
+  const handlePlayCard = () => {
+    if (selectedCardGameId && onPlayCard) {
+      onPlayCard(selectedCardGameId);
+      setSelectedCardGameId(null); // Deseleccionar después de jugar
+    }
+  };
 
   return (
     <div className="min-h-screen bg-chaos-dark text-white p-4">
@@ -235,9 +259,29 @@ const GameBoard: React.FC<GameBoardProps> = ({
         <div className="mt-6 p-4 bg-black/30 rounded-lg">
           <h3 className="font-bold mb-2">Tu mano</h3>
           <div className="text-gray-400 text-center py-8 flex flex-row flex-wrap justify-center gap-2">
-            {currentPlayer.hand_cards.map((card) => (
-              <Card key={card.id} card={card} />
-            ))}
+            {currentPlayer.hand_cards.map((card) => {
+              const isSelected = selectedCardGameId === card.game_id;
+              const canPlayCard = gameState.phase === "deploy" && isCurrentPlayerTurn;
+
+              return (
+                <div key={card.game_id} className="relative">
+                  <Card
+                    card={card}
+                    onClick={() => canPlayCard && handleCardClick(card.game_id)}
+                    isPlayable={canPlayCard}
+                    isSelected={isSelected}
+                  />
+                  {isSelected && canPlayCard && (
+                    <button
+                      onClick={handlePlayCard}
+                      className="absolute -right-2 top-1/2 transform -translate-y-1/2 translate-x-full px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 active:bg-green-800 shadow-lg z-10"
+                    >
+                      ▶ Jugar
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -34,6 +34,7 @@ function App() {
     joinGame,
     joinGameById,
     resumeSession,
+    playCard,
     drawCard,
     nextPhase,
     reconnect,
@@ -178,6 +179,12 @@ function App() {
     }
   };
 
+  const handlePlayCard = (cardGameId: string) => {
+    if (currentPlayerId) {
+      playCard(currentPlayerId, cardGameId);
+    }
+  };
+
   const handleNewGame = () => {
     clearSession();
     setCurrentView("setup");
@@ -240,6 +247,7 @@ function App() {
             currentPlayerId={currentPlayerId!}
             onNextPhase={nextPhase}
             onDrawCard={handleDrawCard}
+            onPlayCard={handlePlayCard}
           />
         ) : (
           <div className="min-h-screen bg-chaos-dark flex items-center justify-center">
