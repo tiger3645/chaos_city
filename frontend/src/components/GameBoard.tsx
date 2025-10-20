@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { GameState, Zone } from "../types/game";
+import { CardStats } from "../types/effects";
 import Card from "./Card";
 import {
   Heart,
@@ -16,6 +17,8 @@ interface GameBoardProps {
   onNextPhase?: () => void;
   onDrawCard?: () => void;
   onPlayCard?: (cardGameId: string) => void;
+  requestCardStats?: (cardGameId: string) => void;
+  getCachedCardStats?: (cardGameId: string) => CardStats | undefined;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -24,6 +27,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onNextPhase,
   onDrawCard,
   onPlayCard,
+  requestCardStats,
+  getCachedCardStats,
 }) => {
   if (!gameState || !gameState.players || gameState.players.length < 2) {
     return (
@@ -244,6 +249,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     isPlayable={
                       gameState.phase === "action" && isCurrentPlayerTurn
                     }
+                    effectiveStats={getCachedCardStats?.(card.game_id)}
+                    onHover={() => requestCardStats?.(card.game_id)}
                   />
                 ))}
               </div>

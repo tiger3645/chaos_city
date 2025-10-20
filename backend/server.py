@@ -5,8 +5,9 @@ import websockets
 from websockets.server import WebSocketServerProtocol
 from typing import Dict, Set
 import logging
-from game_engine import GameEngine
+from engine.base import GameEngine
 from models import Card, Faction, GameState, Zone
+from typing import Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +58,8 @@ class GameServer:
                 await self.handle_resume_session(websocket, data)
             elif message_type == "play_card":
                 await self.handle_play_card(websocket, data)
+            elif message_type == "continue_effect":
+                await self.handle_continue_effect(websocket, data)
             elif message_type == "attack":
                 await self.handle_attack(websocket, data)
             elif message_type == "draw_card":
@@ -65,6 +68,8 @@ class GameServer:
                 await self.handle_next_phase(websocket, data)
             elif message_type == "get_game_state":
                 await self.handle_get_game_state(websocket, data)
+            elif message_type == "get_card_stats":
+                await self.handle_get_card_stats(websocket, data)
             else:
                 await self.send_error(websocket, f"Unknown message type: {message_type}")
                 
@@ -161,18 +166,34 @@ class GameServer:
         if data.get("zone"):
             zone = Zone(data.get("zone"))
 
-        success = self.game_engine.play_card(game_id, player_id, card_game_id, zone)
+        # play_card now returns a Dict with success, message, and effect info
+        result = self.game_engine.play_card(game_id, player_id, card_game_id, zone)
         
-        if success:
+        if result["success"]:
             await self.broadcast_game_state(game_id)
-            await self.broadcast_to_game(game_id, {
+            
+            # Send the result to the player who played the card
+            await self.send_message(websocket, {
                 "type": "card_played",
                 "player_id": player_id,
                 "card_game_id": card_game_id,
-                "zone": zone.value if zone else None
+                "zone": zone.value if zone else None,
+                "message": result.get("message", "Card played successfully"),
+                "requires_choice": result.get("requires_choice", False),
+                "choices": result.get("choices", []),
+                "revealed_info": result.get("revealed_info"),
+                "effect_id": result.get("effect_id")
             })
+            
+            # Broadcast to other players (without revealing private info)
+            await self.broadcast_to_game(game_id, {
+                "type": "card_played_broadcast",
+                "player_id": player_id,
+                "card_game_id": card_game_id,
+                "zone": zone.value if zone else None
+            }, exclude=websocket)
         else:
-            await self.send_error(websocket, "Failed to play card")
+            await self.send_error(websocket, result.get("message", "Failed to play card"))
     
     async def handle_attack(self, websocket: WebSocketServerProtocol, data: dict):
         """Handle attack action"""
@@ -186,6 +207,7 @@ class GameServer:
         defender_id = str(data.get("defender_id"))
         target_zone = Zone(data.get("target_zone"))
 
+        # attack now returns enhanced Dict with effective stats and triggered effects
         result = self.game_engine.attack(game_id, player_id, attacker_id, defender_id, target_zone)
 
         await self.broadcast_to_game(game_id, {
@@ -218,12 +240,21 @@ class GameServer:
             await self.send_error(websocket, "Not in a game")
             return
         
-        success = self.game_engine.next_phase(game_id)
+        # next_phase now returns Dict with success and triggered_effects
+        result = self.game_engine.next_phase(game_id)
         
-        if success:
+        if result.get("success"):
             await self.broadcast_game_state(game_id)
+            
+            # Broadcast triggered effects if any
+            if result.get("triggered_effects"):
+                await self.broadcast_to_game(game_id, {
+                    "type": "effects_triggered",
+                    "effects": result["triggered_effects"],
+                    "message": result.get("message", "Phase changed")
+                })
         else:
-            await self.send_error(websocket, "Failed to advance phase")
+            await self.send_error(websocket, result.get("message", "Failed to advance phase"))
     
     async def handle_get_game_state(self, websocket: WebSocketServerProtocol, data: dict):
         """Send current game state"""
@@ -233,6 +264,53 @@ class GameServer:
             return
         
         await self.send_game_state(websocket, game_id)
+    
+    async def handle_continue_effect(self, websocket: WebSocketServerProtocol, data: dict):
+        """Handle continuing a multi-step effect"""
+        game_id = self.client_games.get(websocket)
+        if not game_id:
+            await self.send_error(websocket, "Not in a game")
+            return
+        
+        player_id = str(data.get("player_id"))
+        effect_id = str(data.get("effect_id"))
+        chosen_value = data.get("chosen_value")
+        
+        result = self.game_engine.continue_effect(game_id, player_id, effect_id, chosen_value)
+        
+        if result["success"]:
+            await self.broadcast_game_state(game_id)
+            
+            await self.send_message(websocket, {
+                "type": "effect_continued",
+                "message": result.get("message", "Effect completed"),
+                "requires_choice": result.get("requires_choice", False),
+                "choices": result.get("choices", []),
+                "revealed_info": result.get("revealed_info"),
+                "effect_id": result.get("effect_id")
+            })
+        else:
+            await self.send_error(websocket, result.get("message", "Failed to continue effect"))
+    
+    async def handle_get_card_stats(self, websocket: WebSocketServerProtocol, data: dict):
+        """Get effective stats for a card (with modifiers)"""
+        game_id = self.client_games.get(websocket)
+        if not game_id:
+            await self.send_error(websocket, "Not in a game")
+            return
+        
+        card_game_id = str(data.get("card_game_id"))
+        
+        stats = self.game_engine.get_card_effective_stats(game_id, card_game_id)
+        
+        if stats:
+            await self.send_message(websocket, {
+                "type": "card_stats",
+                "card_game_id": card_game_id,
+                "stats": stats
+            })
+        else:
+            await self.send_error(websocket, "Failed to get card stats")
 
     async def handle_resume_session(self, websocket: WebSocketServerProtocol, data: dict):
         """Handle resuming a previously-saved session (re-associate websocket with game and player)"""
@@ -402,10 +480,12 @@ class GameServer:
             "game_id": card.game_id
         }
     
-    async def broadcast_to_game(self, game_id: str, message: dict):
+    async def broadcast_to_game(self, game_id: str, message: dict, exclude: Optional[WebSocketServerProtocol] = None):
         """Broadcast a message to all clients in a game"""
         if game_id in self.game_clients:
             for client in self.game_clients[game_id].copy():
+                if client == exclude:
+                    continue
                 try:
                     await self.send_message(client, message)
                 except websockets.exceptions.ConnectionClosed:

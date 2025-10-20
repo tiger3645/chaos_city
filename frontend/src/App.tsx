@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { useGameSession } from "./hooks/useGameSession";
+import { useEffects } from "./hooks/useEffects";
 import { Faction } from "./types/game";
 import GameSetup from "./components/GameSetup";
 import GameBoard from "./components/GameBoard";
 import ConnectionStatus from "./components/ConnectionStatus";
+import EffectModal from "./components/EffectModal";
+import RevealedInfoModal from "./components/RevealedInfoModal";
+import { EffectNotificationsContainer } from "./components/EffectNotification";
 import { CONFIG } from "./config";
 
 function App() {
@@ -37,8 +41,26 @@ function App() {
     playCard,
     drawCard,
     nextPhase,
+    continueEffect,
+    getCardStats,
     reconnect,
   } = useWebSocket(CONFIG.WEBSOCKET.URL);
+
+  // Effects system
+  const {
+    effectModalOpen,
+    effectMessage,
+    effectChoices,
+    handleEffectChoice,
+    handleCancelEffect,
+    revealedInfoModalOpen,
+    revealedInfo,
+    closeRevealedInfoModal,
+    requestCardStats,
+    getCachedCardStats,
+    notifications,
+    dismissNotification
+  } = useEffects(lastMessage, continueEffect, getCardStats);
 
   // Track whether we've attempted to resume/join for the saved session to avoid races
   const resumeAttemptRef = useRef<string>("");
@@ -194,6 +216,27 @@ function App() {
 
   return (
     <div className="App relative">
+      {/* Effect Modals */}
+      <EffectModal
+        isOpen={effectModalOpen}
+        message={effectMessage}
+        choices={effectChoices}
+        onChoose={handleEffectChoice}
+        onCancel={handleCancelEffect}
+      />
+
+      <RevealedInfoModal
+        isOpen={revealedInfoModalOpen}
+        revealedInfo={revealedInfo}
+        onClose={closeRevealedInfoModal}
+      />
+
+      {/* Notifications */}
+      <EffectNotificationsContainer
+        notifications={notifications}
+        onDismiss={dismissNotification}
+      />
+
       <div
         className="fixed top-4 right-4 z-50"
         onClick={() => {
@@ -248,6 +291,8 @@ function App() {
             onNextPhase={nextPhase}
             onDrawCard={handleDrawCard}
             onPlayCard={handlePlayCard}
+            requestCardStats={requestCardStats}
+            getCachedCardStats={getCachedCardStats}
           />
         ) : (
           <div className="min-h-screen bg-chaos-dark flex items-center justify-center">

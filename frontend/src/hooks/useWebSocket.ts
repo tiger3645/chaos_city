@@ -238,6 +238,23 @@ export const useWebSocket = (url: string) => {
         });
     }, [sendMessage]);
 
+    // New effect system methods
+    const continueEffect = useCallback((playerId: string, effectId: string, chosenValue: any) => {
+        sendMessage({
+            type: 'continue_effect',
+            player_id: playerId,
+            effect_id: effectId,
+            chosen_value: chosenValue
+        });
+    }, [sendMessage]);
+
+    const getCardStats = useCallback((cardGameId: string) => {
+        sendMessage({
+            type: 'get_card_stats',
+            card_game_id: cardGameId
+        });
+    }, [sendMessage]);
+
     useEffect(() => {
         shouldReconnect.current = true;
         connect();
@@ -270,6 +287,8 @@ export const useWebSocket = (url: string) => {
         drawCard,
         nextPhase,
         getGameState,
+        continueEffect,
+        getCardStats,
         reconnect,
         disconnect
     };
