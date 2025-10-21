@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { GameState, Zone } from "../types/game";
 import { CardStats } from "../types/effects";
 import Card from "./Card";
+import ConnectionStatus from "./ConnectionStatus";
 import {
   Heart,
   Users,
@@ -19,6 +20,12 @@ interface GameBoardProps {
   onPlayCard?: (cardGameId: string) => void;
   requestCardStats?: (cardGameId: string) => void;
   getCachedCardStats?: (cardGameId: string) => CardStats | undefined;
+  isConnected?: boolean;
+  error?: string | null;
+  connectionAttempts?: number;
+  onReconnect?: () => void;
+  lastAction?: string | null;
+  gameId?: string | null;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -29,6 +36,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onPlayCard,
   requestCardStats,
   getCachedCardStats,
+  isConnected,
+  error,
+  connectionAttempts,
+  onReconnect,
+  lastAction,
+  gameId,
 }) => {
   if (!gameState || !gameState.players || gameState.players.length < 2) {
     return (
@@ -96,7 +109,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
     localPlayer.id === serverCurrentPlayer.id;
 
   // Estado para la carta seleccionada
-  const [selectedCardGameId, setSelectedCardGameId] = useState<string | null>(null);
+  const [selectedCardGameId, setSelectedCardGameId] = useState<string | null>(
+    null
+  );
 
   // Handler para seleccionar/deseleccionar carta
   const handleCardClick = (cardGameId: string) => {
@@ -133,6 +148,26 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <Coins className="w-4 h-4 text-yellow-400 ml-2" />
             <span>{gameState.available_coins}</span>
           </div>
+        </div>
+        <div
+          className="flex items-center flex-col"
+          onClick={() => {
+            navigator.clipboard.writeText(gameId || "");
+          }}
+        >
+          <ConnectionStatus
+            isConnected={isConnected || false}
+            error={error || null}
+            connectionAttempts={connectionAttempts || 0}
+            onReconnect={onReconnect || (() => {})}
+            lastAction={lastAction || null}
+            gameId={gameId || null}
+          />
+          {gameId && (
+            <div className="text-xs text-blue-300 mt-1 font-mono">
+              Game ID: {gameId}
+            </div>
+          )}
         </div>
       </div>
 
@@ -268,7 +303,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
           <div className="text-gray-400 text-center py-8 flex flex-row flex-wrap justify-center gap-2">
             {currentPlayer.hand_cards.map((card) => {
               const isSelected = selectedCardGameId === card.game_id;
-              const canPlayCard = gameState.phase === "deploy" && isCurrentPlayerTurn;
+              const canPlayCard =
+                gameState.phase === "deploy" && isCurrentPlayerTurn;
 
               return (
                 <div key={card.game_id} className="relative">

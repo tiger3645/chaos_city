@@ -5,7 +5,6 @@ import { useEffects } from "./hooks/useEffects";
 import { Faction } from "./types/game";
 import GameSetup from "./components/GameSetup";
 import GameBoard from "./components/GameBoard";
-import ConnectionStatus from "./components/ConnectionStatus";
 import EffectModal from "./components/EffectModal";
 import RevealedInfoModal from "./components/RevealedInfoModal";
 import { EffectNotificationsContainer } from "./components/EffectNotification";
@@ -59,7 +58,7 @@ function App() {
     requestCardStats,
     getCachedCardStats,
     notifications,
-    dismissNotification
+    dismissNotification,
   } = useEffects(lastMessage, continueEffect, getCardStats);
 
   // Track whether we've attempted to resume/join for the saved session to avoid races
@@ -237,29 +236,6 @@ function App() {
         onDismiss={dismissNotification}
       />
 
-      <div
-        className="fixed top-4 right-4 z-50"
-        onClick={() => {
-          navigator.clipboard.writeText(currentGameId || "");
-        }}
-      >
-        <div className="bg-black/90 border border-gray-600 rounded-lg p-3 shadow-lg">
-          <ConnectionStatus
-            isConnected={isConnected}
-            error={error}
-            connectionAttempts={connectionAttempts}
-            onReconnect={reconnect}
-            lastAction={lastAction}
-            gameId={currentGameId}
-          />
-          {currentGameId && (
-            <div className="text-xs text-blue-300 mt-2 font-mono">
-              Game ID: {currentGameId}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Resuming banner */}
       {isResuming && (
         <div className="fixed inset-0 flex items-center justify-center z-40 pointer-events-none">
@@ -293,6 +269,12 @@ function App() {
             onPlayCard={handlePlayCard}
             requestCardStats={requestCardStats}
             getCachedCardStats={getCachedCardStats}
+            isConnected={isConnected}
+            error={error}
+            connectionAttempts={connectionAttempts}
+            onReconnect={reconnect}
+            lastAction={lastAction}
+            gameId={currentGameId}
           />
         ) : (
           <div className="min-h-screen bg-chaos-dark flex items-center justify-center">
