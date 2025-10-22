@@ -95,7 +95,7 @@ const Card: React.FC<CardProps> = ({
         {(card.attack > 0 || card.defense > 0) && (
           <div className="flex justify-between items-center">
             <div
-              className={`flex items-center border p-1 rounded-lg bg-black/20 ${
+              className={`flex items-center border p-[3px] rounded-lg bg-black/20 ${
                 hasModifiers && displayAttack !== card.attack
                   ? displayAttack > card.attack
                     ? "text-green-400 border-green-600"
@@ -107,7 +107,7 @@ const Card: React.FC<CardProps> = ({
               <span className="text-md font-bold">{displayAttack}</span>
             </div>
             <div
-              className={`flex items-center border p-1 rounded-lg bg-black/20 ${
+              className={`flex items-center border p-[3px] rounded-lg bg-black/20 ${
                 hasModifiers && displayDefense !== card.defense
                   ? displayDefense > card.defense
                     ? "text-green-400 border-green-600"

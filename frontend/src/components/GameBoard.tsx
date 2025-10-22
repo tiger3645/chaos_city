@@ -133,24 +133,34 @@ const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-chaos-dark text-white p-4">
-      {/* Game Header */}
-      <div className="flex justify-between items-center mb-6 bg-black/30 p-4 rounded-lg">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-display font-bold text-chaos-gold">
+    <div className="min-h-screen bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 text-white overflow-hidden relative">
+      {/* Background texture overlay */}
+      <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] pointer-events-none" />
+
+      {/* Top Header Bar */}
+      <div className="relative z-10 flex justify-between items-center px-6 py-3 bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80 border-b-2 border-amber-700/50 shadow-2xl">
+        <div className="flex items-center gap-6">
+          <h1 className="text-xl font-display font-bold text-amber-400 drop-shadow-lg">
             Ciudad del Caos
           </h1>
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            <span>
-              Turno {gameState.turn} - {gameState.phase}
-            </span>
-            <Coins className="w-4 h-4 text-yellow-400 ml-2" />
-            <span>{gameState.available_coins}</span>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1 bg-black/40 px-3 py-1 rounded-lg border border-amber-700/30">
+              <Clock className="w-4 h-4 text-amber-400" />
+              <span className="text-gray-200">Turno {gameState.turn}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-black/40 px-3 py-1 rounded-lg border border-amber-700/30">
+              <span className="text-amber-400 font-semibold">
+                {gameState.phase}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 bg-black/40 px-3 py-1 rounded-lg border border-amber-700/30">
+              <Coins className="w-4 h-4 text-yellow-400" />
+              <span className="text-gray-200">{gameState.available_coins}</span>
+            </div>
           </div>
         </div>
         <div
-          className="flex items-center flex-col"
+          className="flex items-center flex-col cursor-pointer"
           onClick={() => {
             navigator.clipboard.writeText(gameId || "");
           }}
@@ -164,150 +174,255 @@ const GameBoard: React.FC<GameBoardProps> = ({
             gameId={gameId || null}
           />
           {gameId && (
-            <div className="text-xs text-blue-300 mt-1 font-mono">
+            <div className="text-xs text-amber-300 mt-1 font-mono">
               Game ID: {gameId}
             </div>
           )}
         </div>
       </div>
 
-      {/* Opponent Area */}
-      <div className="mb-8">
-        <div className="flex items-center justify-end gap-2 mb-4">
-          <div>
-            <div className="flex items-center justify-end gap-2 mb-2">
-              <Users className="w-5 h-5" />
-              <h2 className="text-xl font-bold">{opponent.name}</h2>
+      {/* Main Game Board */}
+      <div className="flex h-[calc(100vh-60px)]">
+        {/* Left Player Info Panel */}
+        <div className="w-48 bg-gradient-to-b from-stone-900/95 to-stone-950/95 border-r-2 border-amber-700/30 p-4 flex flex-col justify-start">
+          <div className="bg-black/40 rounded-lg p-3 border border-red-900/50 shadow-lg">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-5 h-5 text-red-400" />
+              <h2 className="text-lg font-bold text-red-300">
+                {opponent.name}
+              </h2>
             </div>
-            <div className="flex items-center gap-1">
-              <Heart className="w-4 h-4 text-red-400" />
-              <span>{opponent.reputation}</span>
-
-              <Coins className="w-4 h-4 text-yellow-400 ml-2" />
-              <span>{opponent.coins}</span>
-
-              <Layers className="w-4 h-4 text-gray-400 ml-2" />
-              {opponent.deck_count}
-            </div>
-          </div>
-        </div>
-
-        {/* Opponent Field */}
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          {zones.map((zone) => (
-            <div
-              key={zone}
-              className="border-2 border-gray-600 rounded-lg p-4 min-h-48"
-            >
-              <h3 className="text-center font-bold mb-2 capitalize">{zone}</h3>
-              <div className="flex flex-wrap gap-2">
-                {opponent.field[zone].map((card, index) => (
-                  <Card key={`${card.id}-${index}`} card={card} />
-                ))}
-              </div>
-              {gameState.active_environment_card && (
-                <div className="mt-2 p-2 bg-purple-900/30 rounded border border-purple-500">
-                  <Card card={gameState.active_environment_card} />
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between bg-black/30 px-2 py-1 rounded">
+                <div className="flex items-center gap-1">
+                  <Heart className="w-4 h-4 text-red-400" />
+                  <span className="text-gray-300">Vida</span>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Player Area */}
-      <div>
-        <div className="flex items-center gap-2 mb-4 justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5" />
-              <h2 className="text-xl font-bold">{currentPlayer.name}</h2>
-              {isCurrentPlayerTurn && (
-                <span className="ml-4 px-2 py-1 bg-green-600 text-white text-sm rounded">
-                  Tu turno
+                <span className="font-bold text-red-300">
+                  {opponent.reputation}
                 </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <Heart className="w-4 h-4 text-red-400" />
-              <span>{currentPlayer.reputation}</span>
-
-              <Coins className="w-4 h-4 text-yellow-400 ml-2" />
-              <span>{currentPlayer.coins}</span>
-
-              <Layers className="w-4 h-4 text-gray-400 ml-2" />
-              {currentPlayer.deck_count}
+              </div>
+              <div className="flex items-center justify-between bg-black/30 px-2 py-1 rounded">
+                <div className="flex items-center gap-1">
+                  <Coins className="w-4 h-4 text-yellow-400" />
+                  <span className="text-gray-300">Coins</span>
+                </div>
+                <span className="font-bold text-yellow-300">
+                  {opponent.coins}
+                </span>
+              </div>
+              <div className="flex items-center justify-between bg-black/30 px-2 py-1 rounded">
+                <div className="flex items-center gap-1">
+                  <Layers className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-300">Mazo</span>
+                </div>
+                <span className="font-bold text-gray-200">
+                  {opponent.deck_count}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4 flex-1 justify-end">
-            {gameState.phase !== "draw" && isCurrentPlayerTurn && (
-              <button
-                onClick={onNextPhase}
-                className="px-4 py-2 bg-chaos-gold text-black font-bold rounded hover:opacity-80 active:opacity-100 cursor-pointer flex"
+        </div>
+
+        {/* Center Board Area */}
+        <div className="flex-1 flex flex-col relative">
+          {/* Opponent Field */}
+          <div className="flex-1 flex flex-col justify-start p-2 pt-4">
+            {zones
+              .slice()
+              .reverse()
+              .map((zone) => (
+                <div
+                  key={zone}
+                  className="mb-1 bg-gradient-to-r from-stone-800/60 via-stone-700/80 to-stone-800/60 rounded border border-amber-800/40 shadow-inner backdrop-blur-sm"
+                  style={{
+                    minHeight: "100px",
+                    maxHeight: "120px",
+                  }}
+                >
+                  <div className="flex items-center h-full px-3 py-1 row">
+                    {/* Zone Label */}
+                    <div className="w-20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-amber-600/80 uppercase tracking-wider transform -rotate-180 writing-mode-vertical">
+                        {zone}
+                      </span>
+                    </div>
+                    {/* Cards Container */}
+                    <div className="flex-1 flex items-center gap-1 overflow-x-auto px-2">
+                      {opponent.field[zone].map((card, index) => (
+                        <div
+                          key={`${card.id}-${index}`}
+                          className="flex-shrink-0"
+                        >
+                          <Card card={card} />
+                        </div>
+                      ))}
+                      {opponent.field[zone].length === 0 && (
+                        <div className="flex-1 flex items-center justify-center text-gray-600 text-sm italic">
+                          Fila vacía
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          {/* Center Divider */}
+          <div className="h-0.5 bg-gradient-to-r from-transparent via-amber-600 to-transparent shadow-lg" />
+          <div className="h-8 bg-gradient-to-b from-amber-900/20 to-amber-950/20 flex items-center justify-center border-y border-amber-700/20">
+            <div className="text-xs text-amber-500/60 font-bold uppercase tracking-widest">
+              Línea de Batalla
+            </div>
+          </div>
+          <div className="h-0.5 bg-gradient-to-r from-transparent via-amber-600 to-transparent shadow-lg" />
+
+          {/* Player Field */}
+          <div className="flex-1 flex flex-col justify-end p-2 pb-4">
+            {zones.map((zone) => (
+              <div
+                key={zone}
+                className="mb-1 bg-gradient-to-r from-stone-800/60 via-stone-700/80 to-stone-800/60 rounded border border-amber-800/40 shadow-inner backdrop-blur-sm"
+                style={{
+                  minHeight: "100px",
+                  maxHeight: "120px",
+                }}
               >
-                Siguiente Fase
-                <ArrowBigRight className="ms-2" />
-              </button>
+                <div className="flex items-center h-full px-3 py-1 row">
+                  {/* Zone Label */}
+                  <div className="w-20 flex items-center justify-center">
+                    <span className="text-xs font-bold text-amber-600/80 uppercase tracking-wider writing-mode-vertical">
+                      {zone}
+                    </span>
+                  </div>
+                  {/* Cards Container */}
+                  <div className="flex-1 flex items-center gap-1 overflow-x-auto py-2 px-2">
+                    {currentPlayer.field[zone].map((card, index) => (
+                      <div
+                        key={`${card.id}-${index}`}
+                        className="flex-shrink-0"
+                      >
+                        <Card
+                          card={card}
+                          onClick={() => {
+                            if (
+                              gameState.phase === "action" &&
+                              isCurrentPlayerTurn
+                            ) {
+                              console.log(`Attack with ${card.name}`);
+                            }
+                          }}
+                          isPlayable={
+                            gameState.phase === "action" && isCurrentPlayerTurn
+                          }
+                          effectiveStats={getCachedCardStats?.(card.game_id)}
+                          onHover={() => requestCardStats?.(card.game_id)}
+                        />
+                      </div>
+                    ))}
+                    {currentPlayer.field[zone].length === 0 && (
+                      <div className="flex-1 flex items-center justify-center text-gray-600 text-sm italic">
+                        Fila vacía
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Player Info Panel */}
+        <div className="w-48 bg-gradient-to-b from-stone-900/95 to-stone-950/95 border-l-2 border-amber-700/30 p-4 flex flex-col justify-end">
+          <div className="bg-black/40 rounded-lg p-3 border border-blue-900/50 shadow-lg mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-5 h-5 text-blue-400" />
+              <h2 className="text-lg font-bold text-blue-300">
+                {currentPlayer.name}
+              </h2>
+            </div>
+            {isCurrentPlayerTurn && (
+              <div className="mb-3 px-2 py-1 bg-green-600/80 text-white text-xs rounded text-center font-bold">
+                ⚡ TU TURNO
+              </div>
             )}
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between bg-black/30 px-2 py-1 rounded">
+                <div className="flex items-center gap-1">
+                  <Heart className="w-4 h-4 text-red-400" />
+                  <span className="text-gray-300">Vida</span>
+                </div>
+                <span className="font-bold text-red-300">
+                  {currentPlayer.reputation}
+                </span>
+              </div>
+              <div className="flex items-center justify-between bg-black/30 px-2 py-1 rounded">
+                <div className="flex items-center gap-1">
+                  <Coins className="w-4 h-4 text-yellow-400" />
+                  <span className="text-gray-300">Coins</span>
+                </div>
+                <span className="font-bold text-yellow-300">
+                  {currentPlayer.coins}
+                </span>
+              </div>
+              <div className="flex items-center justify-between bg-black/30 px-2 py-1 rounded">
+                <div className="flex items-center gap-1">
+                  <Layers className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-300">Mazo</span>
+                </div>
+                <span className="font-bold text-gray-200">
+                  {currentPlayer.deck_count}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-2">
             {gameState.phase === "draw" && isCurrentPlayerTurn && (
               <button
                 onClick={onDrawCard}
-                className="px-4 py-2 bg-chaos-blue text-white font-bold rounded hover:opacity-80 active:opacity-100 cursor-pointer flex items-center"
+                className="w-full px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:from-blue-500 hover:to-blue-600 active:from-blue-700 active:to-blue-800 shadow-lg flex items-center justify-center gap-2 text-sm"
               >
+                <Layers className="w-4 h-4" />
                 Robar Carta
-                <Layers className="inline w-4 h-4 mr-1 ml-3" />
-                {currentPlayer.deck_count}
+              </button>
+            )}
+            {gameState.phase !== "draw" && isCurrentPlayerTurn && (
+              <button
+                onClick={onNextPhase}
+                className="w-full px-3 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-black font-bold rounded-lg hover:from-amber-500 hover:to-amber-600 active:from-amber-700 active:to-amber-800 shadow-lg flex items-center justify-center gap-2 text-sm"
+              >
+                Siguiente Fase
+                <ArrowBigRight className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Player Field */}
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          {zones.map((zone) => (
-            <div
-              key={zone}
-              className="border-2 border-gray-400 rounded-lg p-4 min-h-48"
-            >
-              <h3 className="text-center font-bold mb-2 capitalize">{zone}</h3>
-              <div className="flex flex-wrap gap-2">
-                {currentPlayer.field[zone].map((card, index) => (
-                  <Card
-                    key={`${card.id}-${index}`}
-                    card={card}
-                    onClick={() => {
-                      if (gameState.phase === "action" && isCurrentPlayerTurn) {
-                        // Handle attack action
-                        console.log(`Attack with ${card.name}`);
-                      }
-                    }}
-                    isPlayable={
-                      gameState.phase === "action" && isCurrentPlayerTurn
-                    }
-                    effectiveStats={getCachedCardStats?.(card.game_id)}
-                    onHover={() => requestCardStats?.(card.game_id)}
-                  />
-                ))}
-              </div>
-              {gameState.active_environment_card && (
-                <div className="mt-2 p-2 bg-purple-900/30 rounded border border-purple-500">
-                  <Card card={gameState.active_environment_card} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6 p-4 bg-black/30 rounded-lg">
-          <h3 className="font-bold mb-2">Tu mano</h3>
-          <div className="text-gray-400 text-center py-8 flex flex-row flex-wrap justify-center gap-2">
+      {/* Bottom Hand Area - Fixed Overlay */}
+      <div className="fixed mx-48 bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/95 via-stone-900/90 to-transparent border-t-2 border-amber-700/40 shadow-2xl backdrop-blur-sm">
+        <div className="px-4 py-1">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+              Tu Mano
+            </h3>
+            <span className="text-xs text-gray-400">
+              {currentPlayer.hand_cards.length} cartas
+            </span>
+          </div>
+          <div
+            className="flex justify-center items-center gap-2 pb-2 overflow-visible"
+            style={{ minHeight: "110px" }}
+          >
             {currentPlayer.hand_cards.map((card) => {
               const isSelected = selectedCardGameId === card.game_id;
               const canPlayCard =
                 gameState.phase === "deploy" && isCurrentPlayerTurn;
 
               return (
-                <div key={card.game_id} className="relative">
+                <div key={card.game_id} className="relative flex-shrink-0 z-10">
                   <Card
                     card={card}
                     onClick={() => canPlayCard && handleCardClick(card.game_id)}
@@ -317,7 +432,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   {isSelected && canPlayCard && (
                     <button
                       onClick={handlePlayCard}
-                      className="absolute -right-2 top-1/2 transform -translate-y-1/2 translate-x-full px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 active:bg-green-800 shadow-lg z-10"
+                      className="absolute -right-2 top-1/2 transform -translate-y-1/2 translate-x-full px-3 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 active:bg-green-800 shadow-xl z-10 text-sm whitespace-nowrap"
                     >
                       ▶ Jugar
                     </button>
@@ -325,6 +440,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 </div>
               );
             })}
+            {currentPlayer.hand_cards.length === 0 && (
+              <div className="text-gray-500 text-sm italic">Mano vacía</div>
+            )}
           </div>
         </div>
       </div>

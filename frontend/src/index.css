@@ -9,6 +9,8 @@ body {
     sans-serif;
   /* background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); */
   min-height: max(100vh, 800px);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .card {
@@ -17,10 +19,13 @@ body {
 
   min-height: max(calc(100vh / 8), 85px);
   min-width: max(calc(100vh / 11), 65px);
+
+  /* Card padding for better visuals */
+  padding: 0.2rem;
 }
 
 .card-shadow {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .card-hover {
@@ -30,6 +35,10 @@ body {
 .card-hover:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.row {
+  min-height: calc(0.5rem + calc(100vh / 8));
 }
 
 .faction-police {
@@ -146,4 +155,68 @@ body {
 
 .animate-slide-in-right {
   animation: slide-in-right 0.3s ease-out;
+}
+
+/* Gwent-style board effects */
+.gwent-row {
+  position: relative;
+  background: linear-gradient(
+    to right,
+    rgba(120, 53, 15, 0.4),
+    rgba(92, 64, 51, 0.6),
+    rgba(120, 53, 15, 0.4)
+  );
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.gwent-divider {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(217, 119, 6, 0.8),
+    transparent
+  );
+  height: 2px;
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.5);
+}
+
+.wood-texture {
+  background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+.metal-border {
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 10px rgba(217, 119, 6, 0.3);
+}
+
+/* Scrollbar styling for Gwent aesthetic */
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(217, 119, 6, 0.6);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 119, 6, 0.8);
+}
+
+/* Vertical text for zone labels */
+.writing-mode-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Enhanced card hover in board */
+.card:hover {
+  z-index: 10;
+  filter: brightness(1.1);
 }
